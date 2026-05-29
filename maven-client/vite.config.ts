@@ -18,5 +18,20 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: "dist",
     chunkSizeWarningLimit: 768,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor": {
+            pre: (id) => id.includes("node_modules") && !id.includes("lucide"),
+            filter: (id) => id.includes("node_modules"),
+          },
+          "vue-vendor": ["vue", "vue-router"],
+          "axios-vendor": ["axios"],
+          "icons-vendor": ["lucide-vue-next"],
+          "toast-vendor": ["mosha-vue-toastify"],
+          "modal-vendor": ["vue-final-modal"],
+        },
+      },
+    },
   },
 });

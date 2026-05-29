@@ -2,6 +2,14 @@ name = "cloud-maven-worker"
 main = "src/index.ts"
 compatibility_date = "2026-05-29"
 
+[build]
+command = "npm --prefix ../maven-client install && npm --prefix ../maven-client run build -- --outDir ../maven-worker/dist && npm run build:worker"
+
+[assets]
+binding = "ASSETS"
+directory = "./dist"
+run_worker_first = true
+
 [[r2_buckets]]
 binding = "MAVEN_BUCKET"
 bucket_name = "cloud-maven"

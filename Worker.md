@@ -232,6 +232,14 @@ name = "cloud-maven-worker"
 main = "src/index.ts"
 compatibility_date = "2026-05-29"
 
+[build]
+command = "npm --prefix ../maven-client install && npm --prefix ../maven-client run build -- --outDir ../maven-worker/dist && npm run build:worker"
+
+[assets]
+binding = "ASSETS"
+directory = "./dist"
+run_worker_first = true
+
 [[r2_buckets]]
 binding = "MAVEN_BUCKET"
 bucket_name = "cloud-maven"
@@ -277,12 +285,12 @@ DEFAULT_REPOSITORY_POLICY
 - `auth` 已实现 Reposilite 风格 `Authorization: xBasic base64(name:secret)`、Bearer/Cookie Session，并提供 `POST /api/auth/login`、`GET /api/auth/me`、`GET /api/auth/session`、`POST /api/auth/logout`。
 - `admin` 已实现有限页 R2 统计、Token 列表/创建/更新/删除、Settings 获取/更新接口，并对 Token 权限输入做路径和 action 校验。
 - `maven` 已实现 `GET/HEAD/PUT/POST/DELETE /*` 文件读写删、目录级删除、Release/Snapshot 重复上传策略、checksum 生成、缓存头、ETag、Content-Type、`GET /api/maven/details/:path*` 目录详情、`GET /api/maven/versions/:path*` 版本摘要、`DELETE /api/maven/artifacts/:path*` 和 `POST /api/maven/generate/pom/:path*`。
-- `maven-worker/README.md` 已补充 Cloudflare R2/KV、环境变量、首个管理员 Token 和当前实现边界说明。
+- `maven-worker/README.md` 已补充 Cloudflare R2/KV、Worker Assets、环境变量、首个管理员 Token 和当前实现边界说明。
 
 部分完成或待补齐：
 - Admin 统计当前使用最多 5 页 R2 list 做低成本近似统计，不做全桶强扫描。
 - `X-Generate-Checksums` 当前会读取完整请求体后写入 R2，适合前端小中型上传；大文件发布建议由 Maven 客户端自带 checksum 文件。
-- `maintainMetadata` 设置已持久化，但服务端仍默认不主动重写 `maven-metadata.xml`。
+- `maintainMetadata` 设置已持久化，metadata 采用读取时计算策略：服务端原样存储 Maven 客户端上传的 `maven-metadata.xml`，`latest`/`release` 字段在读取时从 `versions` 数组推导，不产生额外 R2 写入，无竞态风险。
 - KV namespace id 仍需部署者在 `wrangler.toml` 中替换为实际值。
 - 当前后端交接只要求 Worker 开发，不要求执行 npm 构建、测试、部署验证或补充 Miniflare/Vitest 单测。
 
@@ -292,9 +300,6 @@ DEFAULT_REPOSITORY_POLICY
 - PUBLIC 根仓库允许匿名读取，写入必须认证。
 - Release 制品默认禁止重复上传，但保留配置开关。
 - Checksum 默认只保存 Maven 客户端上传内容，不主动生成。
-
-## 待审查问题
-
-- Snapshot 制品是否保持默认允许重复上传？
-- 是否需要在 Admin 页面暴露根仓库 `PUBLIC`、`PRIVATE`、`HIDDEN` 切换？
-- `HIDDEN` 首版是否按 `PRIVATE` 处理？
+- Snapshot 制品默认允许重复上传。
+- `HIDDEN` 首版按 `PRIVATE` 处理。
+- metadata 维护采用读取时计算策略，服务端不主动重写 `maven-metadata.xml`。

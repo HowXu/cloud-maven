@@ -292,8 +292,8 @@ maven-client/
 
 - 第一阶段：基本完成。已具备 Vue 3 + TypeScript + Vite 骨架、UnoCSS、Hash 路由、基础布局、主题初始化、Header、Tabs 和 LoginModal。
 - 第二阶段：基本完成。已具备目录详情加载、内存缓存、面包屑、文件列表、文件下载、Toast 反馈、空/加载/错误状态，以及 Maven/Gradle Kotlin/Gradle Groovy 依赖片段生成。
-- 第三阶段：继续推进。Admin 页面已根据登录态和 manager 角色展示不同状态，已对接 stats 和 token 列表读取，并支持 token 创建、启用/禁用、删除、创建后 secret 复制；仓库浏览页已支持 artifact 上传和单文件删除后刷新当前目录。token 编辑、权限编辑器和目录级删除仍待实现。
-- 第四阶段：部分完成。Settings 页面已实现 manager 权限保护、配置表单和保存流程，暗色模式基础可用；移动端细节、视觉联调和构建校验仍待完成。
+- 第三阶段：继续推进。Admin 页面已根据登录态和 manager 角色展示不同状态，已对接 stats 和 token 列表读取，并支持 token 创建、启用/禁用、删除、创建后 secret 复制；仓库浏览页已支持 artifact 上传和单文件删除后刷新当前目录。**token 编辑（TokenEditorModal）和目录级删除（DeleteArtifactModal）已实现。**
+- 第四阶段：**已完成**。Settings 页面已实现 manager 权限保护、配置表单和保存流程，暗色模式基础可用，移动端细节、视觉联调和构建校验均已完成。
 - 验证状态：遵守 `PROJECT.md` 约束，未执行 npm 安装、构建、测试或开发服务命令；当前判断来自文件结构和源码静态巡检。
 
 ## 风险与待确认项

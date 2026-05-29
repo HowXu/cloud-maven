@@ -10,9 +10,31 @@ import { mavenApiRoutes, handleFileGet, handleFileHead, handleFilePut, handleFil
 const app = new Hono<AppEnv>()
 let adminBootstrapChecked = false
 
+function serveStaticAsset(c: Context<AppEnv>): Response | Promise<Response> {
+  if (!c.env.ASSETS) return c.notFound()
+  return c.env.ASSETS.fetch(c.req.raw)
+}
+
+function isStaticAssetPath(path: string): boolean {
+  return path === '/' || path === '/index.html' || path.startsWith('/assets/')
+}
+
 app.use('*', async (c: Context<AppEnv>, next: Next) => {
   const requestId = crypto.randomUUID()
   c.set('requestId', requestId)
+
+  const origin = c.req.header('Origin')
+  if (origin) {
+    c.header('Access-Control-Allow-Origin', origin)
+    c.header('Access-Control-Allow-Methods', 'GET, HEAD, PUT, POST, DELETE, OPTIONS')
+    c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Generate-Checksums')
+    c.header('Access-Control-Allow-Credentials', 'true')
+    c.header('Access-Control-Max-Age', '86400')
+  }
+
+  if (c.req.method === 'OPTIONS') {
+    return c.body(null, 204)
+  }
 
   if (!adminBootstrapChecked) {
     await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
@@ -22,6 +44,8 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
   await next()
 
   c.header('X-Request-Id', requestId)
+
+  if (isStaticAssetPath(c.req.path)) return
 
   c.executionCtx.waitUntil(
     (async () => {
@@ -41,6 +65,10 @@ app.get('/api/status/health', (c) => {
 app.route('/api/auth', authApiRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/maven', mavenApiRoutes)
+
+app.get('/', serveStaticAsset)
+app.get('/index.html', serveStaticAsset)
+app.get('/assets/*', serveStaticAsset)
 
 app.get('/*', handleFileGet)
 app.head('/*', handleFileHead)

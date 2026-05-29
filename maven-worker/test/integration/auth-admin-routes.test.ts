@@ -168,6 +168,84 @@ describe('Worker auth and admin routes', () => {
     expect(deleted.status).toBe(204)
   })
 
+  it('rotates token secret via PUT /api/admin/tokens/:id', async () => {
+    const { headers } = await createAuthHeader()
+    const { secret: originalSecret } = await createAuthHeader()
+
+    const created = await SELF.fetch(requestUrl('/api/admin/tokens'), {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: `rotate-${crypto.randomUUID()}`,
+        permissions: [{ path: '/', actions: ['read'] }],
+      }),
+    })
+    const createdBody = await created.json() as { id: string; secret: string }
+
+    const newSecret = `new-secret-${crypto.randomUUID()}`
+    const updated = await SELF.fetch(requestUrl(`/api/admin/tokens/${createdBody.id}`), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        secret: newSecret,
+      }),
+    })
+
+    expect(updated.status).toBe(200)
+    const updatedBody = await updated.json() as { secret: string }
+    expect(updatedBody.secret).toBe(newSecret)
+    expect(updatedBody.secret).not.toBe(createdBody.secret)
+  })
+
+  it('updates and retrieves repository settings via PUT /api/admin/settings', async () => {
+    const { headers } = await createAuthHeader()
+
+    const updated = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: 'Updated Repo Title',
+        baseUrl: 'https://updated.example.com',
+        defaultRepository: 'releases',
+        anonymousRead: false,
+        allowOverwrite: true,
+        generateChecksums: true,
+        maintainMetadata: true,
+      }),
+    })
+
+    expect(updated.status).toBe(200)
+    const updatedBody = await updated.json() as {
+      title: string
+      baseUrl: string
+      defaultRepository: string
+      anonymousRead: boolean
+      allowOverwrite: boolean
+      generateChecksums: boolean
+      maintainMetadata: boolean
+    }
+    expect(updatedBody.title).toBe('Updated Repo Title')
+    expect(updatedBody.anonymousRead).toBe(false)
+    expect(updatedBody.allowOverwrite).toBe(true)
+    expect(updatedBody.generateChecksums).toBe(true)
+    expect(updatedBody.maintainMetadata).toBe(true)
+
+    const fetched = await SELF.fetch(requestUrl('/api/admin/settings'), { headers })
+    await expect(fetched.json()).resolves.toMatchObject({
+      title: 'Updated Repo Title',
+      anonymousRead: false,
+    })
+  })
+
   it('rejects unsupported admin token permission actions', async () => {
     const { headers } = await createAuthHeader()
 

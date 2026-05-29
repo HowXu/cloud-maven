@@ -55,7 +55,11 @@ export function useSession() {
       // A local logout is still valid if the server does not keep state.
     }
 
-    persistToken("", "");
+    tokenName.value = "";
+    tokenSecret.value = "";
+    localStorage.removeItem(tokenNameKey);
+    localStorage.removeItem(tokenSecretKey);
+    delete apiClient.defaults.headers.common.Authorization;
     details.value = null;
     createToast("Signed out", { type: "info", position: "bottom-right" });
   };

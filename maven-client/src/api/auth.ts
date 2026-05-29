@@ -1,4 +1,4 @@
-import { apiClient, createXBasicHeader } from "@/api/client";
+import { apiClient } from "@/api/client";
 import type { SessionDetails } from "@/types";
 
 export interface LoginPayload {
@@ -11,9 +11,7 @@ export const authApi = {
     return apiClient.get<SessionDetails>("/api/auth/me");
   },
   login(payload: LoginPayload) {
-    return apiClient.get<SessionDetails>("/api/auth/me", {
-      headers: createXBasicHeader(payload.name, payload.secret),
-    });
+    return apiClient.post<SessionDetails>("/api/auth/login", payload);
   },
   logout() {
     return apiClient.post<void>("/api/auth/logout");

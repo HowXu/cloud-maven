@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Copy, Database, KeyRound, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-vue-next";
+import { Copy, Database, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-vue-next";
 import { createToast } from "mosha-vue-toastify";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { adminApi, type AccessTokenSummary } from "@/api/admin";
 import LoginModal from "@/components/header/LoginModal.vue";
+import TokenEditorModal from "@/components/admin/TokenEditorModal.vue";
 import { useClipboardToast } from "@/composables/useClipboardToast";
 import { useSession } from "@/composables/useSession";
 import type { AccessPermission, AdminStats } from "@/types";
@@ -19,6 +20,8 @@ const creating = ref(false);
 const tokenBusy = ref<Record<string, boolean>>({});
 const createdSecret = ref("");
 const createdTokenName = ref("");
+const showEditor = ref(false);
+const editingToken = ref<AccessTokenSummary | null>(null);
 const permissionActions = ["read", "write", "delete", "manage"] as const;
 
 type PermissionAction = AccessPermission["actions"][number];
@@ -117,6 +120,65 @@ const setTokenBusy = (id: string, busy: boolean) => {
   };
 };
 
+const openEditor = (token: AccessTokenSummary) => {
+  editingToken.value = token;
+  showEditor.value = true;
+};
+
+const openCreate = () => {
+  editingToken.value = null;
+  showEditor.value = true;
+};
+
+const saveToken = async (data: { name: string; description: string; path: string; actions: AccessPermission["actions"] }) => {
+  if (!data.name.trim()) {
+    createToast("Token name is required", { type: "warning", position: "bottom-right" });
+    return;
+  }
+
+  if (!editingToken.value) {
+    creating.value = true;
+    try {
+      const response = await adminApi.createToken({
+        name: data.name.trim(),
+        description: data.description.trim() || undefined,
+        permissions: [{
+          path: normalizePermissionPath(data.path),
+          actions: data.actions,
+        }],
+      });
+      createdTokenName.value = response.data.name;
+      createdSecret.value = response.data.secret;
+      createToast("Token created", { type: "success", position: "bottom-right" });
+      await loadAdminData();
+    } catch {
+      createToast("Token could not be created", { type: "danger", position: "bottom-right" });
+    } finally {
+      creating.value = false;
+      showEditor.value = false;
+    }
+  } else {
+    setTokenBusy(editingToken.value.id, true);
+    try {
+      const response = await adminApi.updateToken(editingToken.value.id, {
+        name: data.name,
+        description: data.description || undefined,
+        permissions: [{
+          path: normalizePermissionPath(data.path),
+          actions: data.actions,
+        }],
+      });
+      tokens.value = tokens.value.map((entry) => entry.id === editingToken.value!.id ? response.data : entry);
+      createToast("Token updated", { type: "success", position: "bottom-right" });
+    } catch {
+      createToast("Token could not be updated", { type: "danger", position: "bottom-right" });
+    } finally {
+      setTokenBusy(editingToken.value!.id, false);
+      showEditor.value = false;
+    }
+  }
+};
+
 const toggleToken = async (token: AccessTokenSummary) => {
   setTokenBusy(token.id, true);
 
@@ -192,23 +254,23 @@ watch(isManager, loadAdminData);
       <p v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">Loading admin data...</p>
       <p v-if="error" class="mb-4 text-sm text-amber-700 dark:text-amber-300">{{ error }}</p>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article class="panel-surface rounded-lg p-5">
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="panel-surface lift rounded-lg p-5">
           <Database class="mb-4 h-5 w-5 text-blue-600" />
           <p class="muted-label">Repositories</p>
           <strong class="mt-2 block text-2xl">{{ stats?.repositories ?? "-" }}</strong>
         </article>
-        <article class="panel-surface rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-5">
           <Database class="mb-4 h-5 w-5 text-teal-700" />
           <p class="muted-label">Objects</p>
           <strong class="mt-2 block text-2xl">{{ stats?.objects ?? "-" }}</strong>
         </article>
-        <article class="panel-surface rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-5">
           <ShieldCheck class="mb-4 h-5 w-5 text-amber-600" />
           <p class="muted-label">Requests 24h</p>
           <strong class="mt-2 block text-2xl">{{ stats?.requests24h ?? "-" }}</strong>
         </article>
-        <article class="panel-surface rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-5">
           <KeyRound class="mb-4 h-5 w-5 text-blue-600" />
           <p class="muted-label">Tokens</p>
           <strong class="mt-2 block text-2xl">{{ tokenCount || "-" }}</strong>
@@ -270,7 +332,13 @@ watch(isManager, loadAdminData);
         </div>
 
         <div>
-          <h3 class="mb-3 text-lg font-semibold">Access tokens</h3>
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold">Access tokens</h3>
+            <button class="soft-button" type="button" @click="openCreate">
+              <Plus class="h-4 w-4" />
+              New token
+            </button>
+          </div>
           <div class="panel-surface overflow-hidden rounded-lg">
             <div v-if="tokens.length === 0" class="p-5 text-sm text-gray-500 dark:text-gray-400">
               Token management API is ready, but no tokens were returned.
@@ -312,6 +380,15 @@ watch(isManager, loadAdminData);
                 <button
                   class="icon-button"
                   type="button"
+                  title="Edit token"
+                  :disabled="tokenBusy[token.id]"
+                  @click="openEditor(token)"
+                >
+                  <Pencil class="h-4 w-4" />
+                </button>
+                <button
+                  class="icon-button"
+                  type="button"
                   title="Delete token"
                   :disabled="tokenBusy[token.id]"
                   @click="removeToken(token)"
@@ -323,6 +400,18 @@ watch(isManager, loadAdminData);
           </div>
         </div>
       </section>
+
+      <TokenEditorModal
+        :show="showEditor"
+        :initial="editingToken ? {
+          name: editingToken.name,
+          description: editingToken.description,
+          path: editingToken.permissions[0]?.path ?? '/',
+          actions: editingToken.permissions[0]?.actions ?? ['read'],
+        } : undefined"
+        @close="showEditor = false"
+        @save="saveToken"
+      />
     </div>
   </section>
 </template>

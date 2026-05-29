@@ -34,7 +34,7 @@ watchEffect(() => {
 
   <main class="bg-cloud-wash dark:bg-black">
     <div class="content-container">
-      <nav class="flex border-b border-gray-200 dark:border-gray-800" aria-label="Main sections">
+      <nav class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto" aria-label="Main sections">
         <button
           v-for="tab in visibleTabs"
           :key="tab"

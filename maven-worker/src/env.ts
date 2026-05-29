@@ -47,6 +47,7 @@ export interface TokenInfo {
 }
 
 export type Bindings = {
+  ASSETS?: Fetcher
   MAVEN_BUCKET: R2Bucket
   MAVEN_KV: KVNamespace
   ADMIN_BOOTSTRAP_TOKEN?: string

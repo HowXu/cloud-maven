@@ -35,5 +35,6 @@ export default defineConfig({
     "icon-button": "inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-colors duration-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800",
     "field-control": "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition-colors duration-300 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white",
     "muted-label": "text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400",
+    "hover-lift": "transition-transform duration-200 ease hover:-translate-y-0.5 hover:shadow-md",
   },
 });

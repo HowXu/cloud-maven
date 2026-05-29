@@ -12,6 +12,10 @@ const name = ref("");
 const secret = ref("");
 const submitting = ref(false);
 
+const emit = defineEmits<{
+  (e: "click"): void;
+}>();
+
 const close = () => {
   show.value = false;
 };
@@ -22,6 +26,7 @@ const submit = async () => {
   try {
     await login(name.value, secret.value);
     close();
+    emit("click");
   } catch {
     createToast("Invalid access token", { type: "danger", position: "bottom-right" });
   } finally {

@@ -207,6 +207,30 @@ describe('Worker Maven routes', () => {
     await expect(env.MAVEN_BUCKET.get(path)).resolves.toBeNull()
   })
 
+  it('deletes artifact directories via the artifacts API endpoint', async () => {
+    const authHeader = await createAuthHeader()
+    const base = `releases/com/example/demo-${crypto.randomUUID()}`
+    const firstPath = `${base}/1.0.0/demo-1.0.0.jar`
+    const secondPath = `${base}/1.0.0/demo-1.0.0.pom`
+    await env.MAVEN_BUCKET.put(firstPath, 'jar-content')
+    await env.MAVEN_BUCKET.put(secondPath, '<project />')
+
+    const response = await SELF.fetch(requestUrl(`/api/maven/artifacts/${base}`), {
+      method: 'DELETE',
+      headers: authHeader,
+    })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      deleted: true,
+      path: base,
+      type: 'DIRECTORY',
+      deletedCount: 2,
+    })
+    await expect(env.MAVEN_BUCKET.get(firstPath)).resolves.toBeNull()
+    await expect(env.MAVEN_BUCKET.get(secondPath)).resolves.toBeNull()
+  })
+
   it('deletes artifact directories by prefix', async () => {
     const authHeader = await createAuthHeader()
     const base = `releases/com/example/demo-${crypto.randomUUID()}`

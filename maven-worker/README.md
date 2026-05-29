@@ -1,6 +1,6 @@
 # Cloud-Maven Worker 部署说明
 
-本文档只覆盖 Worker 后端初始化。当前交接不要求在本机执行 npm 构建、测试或部署命令。
+本文档覆盖单 Worker 部署。当前项目使用 Cloudflare Workers Static Assets，部署 `maven-worker` 时会同时构建并上传 `maven-client` 前端。
 
 ## Cloudflare 资源
 
@@ -9,6 +9,21 @@
 - R2 bucket：`cloud-maven`
 - KV namespace：绑定名 `MAVEN_KV`
 - Worker name：`cloud-maven-worker`
+- Worker Assets：`maven-worker/dist`
+
+`wrangler.toml` 中的构建和静态资源配置：
+
+```toml
+[build]
+command = "npm --prefix ../maven-client install && npm --prefix ../maven-client run build -- --outDir ../maven-worker/dist && npm run build:worker"
+
+[assets]
+binding = "ASSETS"
+directory = "./dist"
+run_worker_first = true
+```
+
+Cloudflare Dashboard 导入 Git 仓库时，项目目录选择 `maven-worker` 即可。Wrangler 会先构建前端，再一次部署 Worker 和静态资源。
 
 `wrangler.toml` 中的 KV `id` 仍是占位值：
 

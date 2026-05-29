@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 
 import { createArtifactUrl } from "@/api/client";
 import { mavenApi } from "@/api/maven";
-import DeleteEntryModal from "@/components/browser/DeleteEntryModal.vue";
+import DeleteArtifactModal from "@/components/browser/DeleteArtifactModal.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import type { RepositoryEntry } from "@/types";
 
@@ -140,9 +140,11 @@ const downloadEntry = async (entry: RepositoryEntry) => {
           <LoaderCircle v-if="downloadingPath === childPath(entry).replace(/^\/+/, '')" class="h-4 w-4 animate-spin" />
           <HardDriveDownload v-else class="h-4 w-4" />
         </button>
-        <DeleteEntryModal :base-path="path" :entry="entry" @deleted="emit('changed')" />
+        <DeleteArtifactModal :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
       </div>
-      <span v-else class="h-9 w-20" />
+      <div v-else class="entry-actions">
+        <DeleteArtifactModal :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
+      </div>
     </div>
   </div>
 </template>

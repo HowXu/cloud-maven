@@ -7,10 +7,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 :root:has(.dark) {
   color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: 1rem;
 }
 
 body {
@@ -18,9 +29,39 @@ body {
   min-width: 320px;
 }
 
+::selection {
+  background: rgb(37 99 235 / 0.18);
+  color: inherit;
+}
+
+::-moz-selection {
+  background: rgb(37 99 235 / 0.18);
+  color: inherit;
+}
+
 button,
 input {
   font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgb(37 99 235);
+  outline-offset: 2px;
+}
+
+a:focus-visible {
+  outline: 2px solid rgb(37 99 235);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 button:disabled {
@@ -44,4 +85,8 @@ a {
 ::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgb(148 163 184 / 0.55);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(148 163 184 / 0.85);
 }

@@ -27,6 +27,9 @@ export const mavenApi = {
     });
   },
   delete(path: string) {
-    return apiClient.delete(`/${normalizePath(path)}`);
+    return apiClient.delete<void>(`/${normalizePath(path)}`);
+  },
+  deleteArtifact(path: string) {
+    return apiClient.delete<void>(`/api/maven/artifacts/${normalizePath(path)}`);
   },
 };

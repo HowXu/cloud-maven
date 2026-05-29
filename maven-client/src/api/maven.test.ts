@@ -63,4 +63,10 @@ describe("mavenApi", () => {
 
     expect(apiClient.delete).toHaveBeenCalledWith("/releases/com/example/demo/1.0.0/demo.jar");
   });
+
+  it("deletes artifact directories via the artifacts endpoint", () => {
+    mavenApi.deleteArtifact("/releases/com/example/demo/1.0.0");
+
+    expect(apiClient.delete).toHaveBeenCalledWith("/api/maven/artifacts/releases/com/example/demo/1.0.0");
+  });
 });

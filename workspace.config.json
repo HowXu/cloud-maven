@@ -104,10 +104,6 @@
     "deploy": {
       "steps": [
         {
-          "project": "client",
-          "script": "build"
-        },
-        {
           "project": "worker",
           "script": "deploy"
         }

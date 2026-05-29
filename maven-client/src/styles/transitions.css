@@ -12,3 +12,16 @@
   opacity: 0;
   transform: translateX(-1rem);
 }
+
+.lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.08);
+}
+
+.dark .lift:hover {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+}

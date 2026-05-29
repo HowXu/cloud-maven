@@ -139,7 +139,7 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
 </script>
 
 <template>
-  <aside class="panel-surface rounded-lg p-5 lg:sticky lg:top-6 lg:self-start">
+  <aside class="panel-surface lift rounded-lg p-5 sm:sticky sm:top-6 sm:self-start">
     <div class="mb-4 flex items-center justify-between gap-3">
       <div>
         <p class="muted-label">Snippet</p>
@@ -234,6 +234,14 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
   font-family: Consolas, Monaco, monospace;
   font-size: 0.8rem;
   line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snippet-code code {
+  display: block;
+  min-width: 0;
 }
 
 .dark .metadata-row span {
@@ -252,5 +260,10 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
 
 .dark .snippet-code {
   background: rgb(31 41 55);
+  color: rgb(229 231 235);
+}
+
+.dark .snippet-code code {
+  color: inherit;
 }
 </style>

@@ -169,13 +169,33 @@ function getTagValues(xml: string, tagName: string): string[] {
     .filter((value): value is string => Boolean(value))
 }
 
-function parseMavenMetadata(xml: string): MavenMetadata {
+function isSnapshotVersion(v: string): boolean {
+  return /-SNAPSHOT$/i.test(v)
+}
+
+function versionCompare(a: string, b: string): number {
+  const cleanA = a.replace(/-SNAPSHOT$/i, '').split(/[._-]/).map(p => Number(p) || 0)
+  const cleanB = b.replace(/-SNAPSHOT$/i, '').split(/[._-]/).map(p => Number(p) || 0)
+  const maxLen = Math.max(cleanA.length, cleanB.length)
+  for (let i = 0; i < maxLen; i++) {
+    const nA = cleanA[i] ?? 0
+    const nB = cleanB[i] ?? 0
+    if (nA !== nB) return nA - nB
+  }
+  return 0
+}
+
+export function parseMavenMetadata(xml: string): MavenMetadata {
+  const versions = getTagValues(xml, 'version')
+  const releaseVersions = versions.filter(v => !isSnapshotVersion(v))
+  const sorted = [...releaseVersions].sort(versionCompare)
+
   return {
     groupId: getTagValue(xml, 'groupId'),
     artifactId: getTagValue(xml, 'artifactId'),
-    latest: getTagValue(xml, 'latest'),
-    release: getTagValue(xml, 'release'),
-    versions: getTagValues(xml, 'version'),
+    latest: sorted[sorted.length - 1],
+    release: sorted[sorted.length - 1],
+    versions,
     lastUpdated: getTagValue(xml, 'lastUpdated'),
   }
 }
