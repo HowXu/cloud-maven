@@ -41,3 +41,13 @@ npm相关命令已被禁止，如有需求请告知
 ## 共同要求
 
 高性能，减少Cloudflare的计费资源消耗
+
+## 当前进度（2026-05-29）
+
+- 项目已统一命名为 Cloud-Maven，根目录采用 `maven-client` 与 `maven-worker` 两端工作区结构。
+- 根目录已具备 `PROJECT.md`、`STRUCT.md`、`API.md`、`Client.md`、`Worker.md`、`workspace.config.json` 和 `scripts/workspace.mjs`，用于跨端交接、接口契约和任务编排。
+- 前端已完成 Vue 3 + TypeScript + Vite 骨架、Hash 路由、主题切换、登录弹窗、仓库浏览、面包屑、文件下载、依赖片段生成、Admin 基础视图、token 基础管理、artifact 上传/单文件删除和 Settings 表单。
+- 前端第三、第四阶段仍有增强项待做：token 编辑与权限编辑器、目录级删除体验、移动端细节、视觉联调和构建校验。
+- Worker 端已完成基础工程、Hono 入口、Cloudflare R2/KV 绑定配置、通用响应/错误/路径/MIME/Checksum 工具、Token 与 Session 鉴权、Admin 基础接口、Settings 接口、Maven 文件读写删、目录详情、版本摘要、目录级删除、POM 生成接口和部署初始化说明的首版实现。
+- 后端仍需继续打磨统计成本控制、metadata 维护策略和生产级边界处理。
+- 当前后端交接只要求 Worker 开发，不要求执行 npm 安装、构建、测试、开发服务或部署验证。

@@ -64,6 +64,10 @@
           "script": "typecheck"
         },
         {
+          "project": "client",
+          "script": "test"
+        },
+        {
           "project": "worker",
           "script": "typecheck"
         },
@@ -75,6 +79,10 @@
     },
     "test": {
       "steps": [
+        {
+          "project": "client",
+          "script": "test"
+        },
         {
           "project": "worker",
           "script": "test"

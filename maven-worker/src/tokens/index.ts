@@ -1,8 +1,9 @@
-import type { AccessToken, AccessPermission } from '../env'
-import { badRequest, conflict, forbidden, internalError, notFound, unauthorized } from '../shared'
+import type { AccessToken, AccessPermission, AccessSession } from '../env'
+import { conflict, forbidden, internalError, notFound } from '../shared'
 
 const KV_PREFIX_TOKEN = 'token:'
 const KV_PREFIX_TOKEN_NAME = 'token-name:'
+const KV_PREFIX_SESSION = 'session:'
 
 const PBKDF2_ITERATIONS = 100000
 
@@ -188,6 +189,52 @@ export async function validateToken(
   if (token.expiresAt && new Date(token.expiresAt) < new Date()) return null
 
   return token
+}
+
+export async function createSession(
+  kv: KVNamespace,
+  token: AccessToken,
+  ttlSeconds: number
+): Promise<AccessSession> {
+  const now = Date.now()
+  const session: AccessSession = {
+    id: crypto.randomUUID(),
+    tokenId: token.id,
+    createdAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + ttlSeconds * 1000).toISOString(),
+  }
+
+  await kv.put(`${KV_PREFIX_SESSION}${session.id}`, JSON.stringify(session), {
+    expirationTtl: ttlSeconds,
+  })
+
+  return session
+}
+
+export async function getSession(kv: KVNamespace, id: string): Promise<AccessSession | null> {
+  const raw = await kv.get(`${KV_PREFIX_SESSION}${id}`)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    throw internalError('Failed to parse session')
+  }
+}
+
+export async function getTokenBySession(kv: KVNamespace, id: string): Promise<AccessToken | null> {
+  const session = await getSession(kv, id)
+  if (!session) return null
+  if (new Date(session.expiresAt) < new Date()) return null
+
+  const token = await getToken(kv, session.tokenId)
+  if (!token || token.disabled) return null
+  if (token.expiresAt && new Date(token.expiresAt) < new Date()) return null
+
+  return token
+}
+
+export async function deleteSession(kv: KVNamespace, id: string): Promise<void> {
+  await kv.delete(`${KV_PREFIX_SESSION}${id}`)
 }
 
 export async function ensureAdminToken(kv: KVNamespace, bootstrapSecret?: string): Promise<void> {

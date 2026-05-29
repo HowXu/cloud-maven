@@ -23,6 +23,43 @@ Authorization: xBasic base64(name:secret)
 
 ## Auth
 
+### POST /api/auth/login
+
+使用 token name/secret 登录并创建短期 Session。前端仍可继续直接使用 `xBasic`，该接口用于后续切换到 Bearer 或 Cookie Session。
+
+Request:
+
+```json
+{
+  "name": "admin",
+  "secret": "token-secret"
+}
+```
+
+Response:
+
+```json
+{
+  "token": {
+    "id": "token_01",
+    "name": "admin",
+    "description": "Default administrator",
+    "createdAt": "2026-05-29T00:00:00.000Z"
+  },
+  "roles": ["manager"],
+  "permissions": [
+    {
+      "path": "/",
+      "actions": ["read", "write", "delete", "manage"]
+    }
+  ],
+  "session": {
+    "token": "session-id",
+    "expiresAt": "2026-05-30T00:00:00.000Z"
+  }
+}
+```
+
 ### GET /api/auth/me
 
 获取当前 token 身份。
@@ -49,9 +86,13 @@ Response:
 }
 ```
 
+### GET /api/auth/session
+
+获取当前 Bearer 或 Cookie Session 对应的身份信息。响应结构同 `GET /api/auth/me`。
+
 ### POST /api/auth/logout
 
-退出登录。若后端 token 无状态，可直接返回 `204 No Content`。
+退出登录。若请求携带 Session，则删除 Session 并清理 Cookie；若仅使用无状态 `xBasic`，也返回 `204 No Content`。
 
 ## Maven Repository
 
@@ -140,6 +181,10 @@ Response:
 }
 ```
 
+### POST /:repository/:path*
+
+行为同 `PUT /:repository/:path*`，用于兼容部分 Maven 发布工具或代理使用 POST 部署文件。
+
 ### DELETE /:repository/:path*
 
 删除 Maven 文件或目录。
@@ -151,7 +196,9 @@ Response:
 ```json
 {
   "deleted": true,
-  "path": "releases/com/example/app/1.0.0/app-1.0.0.jar"
+  "path": "releases/com/example/app/1.0.0/app-1.0.0.jar",
+  "type": "FILE",
+  "deletedCount": 1
 }
 ```
 
@@ -167,7 +214,57 @@ Request:
 {
   "groupId": "com.example",
   "artifactId": "app",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "packaging": "jar",
+  "name": "Example App",
+  "description": "Optional description"
+}
+```
+
+Response:
+
+```json
+{
+  "path": "releases/com/example/app/1.0.0/app-1.0.0.pom",
+  "size": 512
+}
+```
+
+### GET /api/maven/versions/:path*
+
+读取指定 artifact 路径下的 `maven-metadata.xml` 并返回版本摘要。
+
+权限：匿名读取开启时可匿名访问；否则需要 `read` 权限。
+
+Response:
+
+```json
+{
+  "path": "releases/com/example/app",
+  "metadataPath": "releases/com/example/app/maven-metadata.xml",
+  "groupId": "com.example",
+  "artifactId": "app",
+  "latest": "1.1.0",
+  "release": "1.1.0",
+  "versions": ["1.0.0", "1.1.0"],
+  "lastUpdated": "20260529000000"
+}
+```
+
+### DELETE /api/maven/artifacts/:path*
+
+删除指定 artifact 目录前缀下的所有对象。
+
+权限：需要 `delete` 权限。
+
+Response:
+
+```json
+{
+  "deleted": true,
+  "path": "releases/com/example/app",
+  "type": "DIRECTORY",
+  "deletedCount": 8
 }
 ```
 
@@ -178,6 +275,8 @@ Request:
 获取管理页统计数据。
 
 权限：需要 `manager`。
+
+说明：`objects` 和 `storageBytes` 以低成本 R2 list 方式统计；对象很多时允许返回近似值。
 
 Response:
 

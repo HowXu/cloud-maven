@@ -263,6 +263,29 @@ DEFAULT_REPOSITORY_POLICY
 8. 增加 Miniflare 单测，覆盖路径安全、权限、上传、下载、删除。
 9. 编写部署说明和初始化说明。
 
+## 当前实现进度（2026-05-29）
+
+状态：核心链路已有首版代码，当前继续补齐 Worker 后端功能和部署说明。
+
+已完成：
+- `maven-worker` 工程已建立，包含 Wrangler、TypeScript、Hono、Vitest 配置和 `cloud-maven-worker` 部署名。
+- Worker 入口已注册 `X-Request-Id`、健康检查、Auth、Admin、Maven API 路由和 Maven 文件直连 `GET/HEAD/PUT/POST/DELETE` 路由。
+- `shared` 已实现 JSON 响应、错误映射、Maven 路径安全校验、MIME 类型、缓存策略和 SHA-1/MD5 checksum 工具。
+- `storage` 已封装 R2 `get/head/put/delete/list`、按前缀批量删除和有限页对象统计。
+- `config` 已实现根仓库策略与 Settings 的 KV 读写，匿名读取和覆盖上传会同步到仓库策略。
+- `tokens` 已实现 PBKDF2-SHA256 secret 哈希、Token 创建/查询/列表/更新/删除、Session KV 存取、管理员 Token bootstrap 和路径前缀权限匹配。
+- `auth` 已实现 Reposilite 风格 `Authorization: xBasic base64(name:secret)`、Bearer/Cookie Session，并提供 `POST /api/auth/login`、`GET /api/auth/me`、`GET /api/auth/session`、`POST /api/auth/logout`。
+- `admin` 已实现有限页 R2 统计、Token 列表/创建/更新/删除、Settings 获取/更新接口，并对 Token 权限输入做路径和 action 校验。
+- `maven` 已实现 `GET/HEAD/PUT/POST/DELETE /*` 文件读写删、目录级删除、Release/Snapshot 重复上传策略、checksum 生成、缓存头、ETag、Content-Type、`GET /api/maven/details/:path*` 目录详情、`GET /api/maven/versions/:path*` 版本摘要、`DELETE /api/maven/artifacts/:path*` 和 `POST /api/maven/generate/pom/:path*`。
+- `maven-worker/README.md` 已补充 Cloudflare R2/KV、环境变量、首个管理员 Token 和当前实现边界说明。
+
+部分完成或待补齐：
+- Admin 统计当前使用最多 5 页 R2 list 做低成本近似统计，不做全桶强扫描。
+- `X-Generate-Checksums` 当前会读取完整请求体后写入 R2，适合前端小中型上传；大文件发布建议由 Maven 客户端自带 checksum 文件。
+- `maintainMetadata` 设置已持久化，但服务端仍默认不主动重写 `maven-metadata.xml`。
+- KV namespace id 仍需部署者在 `wrangler.toml` 中替换为实际值。
+- 当前后端交接只要求 Worker 开发，不要求执行 npm 构建、测试、部署验证或补充 Miniflare/Vitest 单测。
+
 ## 已确认决策
 
 - 不创建 `releases` 和 `snapshots` 默认仓库，Maven 仓库直接使用根目录。

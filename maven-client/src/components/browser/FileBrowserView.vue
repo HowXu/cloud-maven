@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { RefreshCw, Upload } from "lucide-vue-next";
+import { RefreshCw } from "lucide-vue-next";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import BreadcrumbNavigation from "@/components/browser/BreadcrumbNavigation.vue";
 import FileList from "@/components/browser/FileList.vue";
+import UploadArtifactModal from "@/components/browser/UploadArtifactModal.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import LoadingState from "@/components/common/LoadingState.vue";
 import SnippetsCard from "@/components/card/SnippetsCard.vue";
@@ -34,10 +35,11 @@ watch(
             <button class="icon-button" type="button" title="Refresh" @click="repository.load(currentPath, true)">
               <RefreshCw class="h-4 w-4" />
             </button>
-            <button class="soft-button" type="button" :disabled="!repository.canWrite.value">
-              <Upload class="h-4 w-4" />
-              Upload
-            </button>
+            <UploadArtifactModal
+              :path="currentPath"
+              :disabled="!repository.canWrite.value"
+              @uploaded="repository.load(currentPath, true)"
+            />
           </div>
         </div>
 
@@ -48,7 +50,12 @@ watch(
             :message="repository.error.value"
             @retry="repository.load(currentPath, true)"
           />
-          <FileList v-else :path="currentPath" :entries="repository.entries.value" />
+          <FileList
+            v-else
+            :path="currentPath"
+            :entries="repository.entries.value"
+            @changed="repository.load(currentPath, true)"
+          />
         </div>
       </div>
 

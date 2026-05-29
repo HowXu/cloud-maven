@@ -5,12 +5,17 @@ import { computed, ref } from "vue";
 
 import { createArtifactUrl } from "@/api/client";
 import { mavenApi } from "@/api/maven";
+import DeleteEntryModal from "@/components/browser/DeleteEntryModal.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import type { RepositoryEntry } from "@/types";
 
 const props = defineProps<{
   path: string;
   entries: RepositoryEntry[];
+}>();
+
+const emit = defineEmits<{
+  changed: [];
 }>();
 
 const sortedEntries = computed(() => [...props.entries].sort((left, right) => {
@@ -124,18 +129,20 @@ const downloadEntry = async (entry: RepositoryEntry) => {
       <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ formatSize(entry.size) }}</span>
       <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 md:block">{{ formatDate(entry.updatedAt) }}</span>
 
-      <button
-        v-if="entry.type === 'FILE'"
-        class="icon-button"
-        type="button"
-        :disabled="downloadingPath === childPath(entry).replace(/^\/+/, '')"
-        :title="downloadingPath === childPath(entry).replace(/^\/+/, '') ? 'Downloading' : 'Download'"
-        @click="downloadEntry(entry)"
-      >
-        <LoaderCircle v-if="downloadingPath === childPath(entry).replace(/^\/+/, '')" class="h-4 w-4 animate-spin" />
-        <HardDriveDownload v-else class="h-4 w-4" />
-      </button>
-      <span v-else class="h-9 w-9" />
+      <div v-if="entry.type === 'FILE'" class="entry-actions">
+        <button
+          class="icon-button"
+          type="button"
+          :disabled="downloadingPath === childPath(entry).replace(/^\/+/, '')"
+          :title="downloadingPath === childPath(entry).replace(/^\/+/, '') ? 'Downloading' : 'Download'"
+          @click="downloadEntry(entry)"
+        >
+          <LoaderCircle v-if="downloadingPath === childPath(entry).replace(/^\/+/, '')" class="h-4 w-4 animate-spin" />
+          <HardDriveDownload v-else class="h-4 w-4" />
+        </button>
+        <DeleteEntryModal :base-path="path" :entry="entry" @deleted="emit('changed')" />
+      </div>
+      <span v-else class="h-9 w-20" />
     </div>
   </div>
 </template>
@@ -177,6 +184,13 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   align-items: center;
   gap: 0.75rem;
   color: inherit;
+}
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
 
 .dark .entry-row {

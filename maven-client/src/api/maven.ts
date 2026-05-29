@@ -18,7 +18,7 @@ export const mavenApi = {
       responseType: "blob",
     });
   },
-  upload(path: string, file: File, generateChecksums = true) {
+  upload(path: string, file: File, generateChecksums = false) {
     return apiClient.put(`/${normalizePath(path)}`, file, {
       headers: {
         "Content-Type": file.type || "application/octet-stream",

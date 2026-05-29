@@ -23,6 +23,13 @@ export interface AccessToken {
   permissions: AccessPermission[]
 }
 
+export interface AccessSession {
+  id: string
+  tokenId: string
+  createdAt: string
+  expiresAt: string
+}
+
 export interface ClientSettings {
   title: string
   baseUrl: string

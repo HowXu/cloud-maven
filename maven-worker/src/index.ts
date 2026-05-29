@@ -8,12 +8,16 @@ import { adminRoutes } from './admin'
 import { mavenApiRoutes, handleFileGet, handleFileHead, handleFilePut, handleFileDelete } from './maven'
 
 const app = new Hono<AppEnv>()
+let adminBootstrapChecked = false
 
 app.use('*', async (c: Context<AppEnv>, next: Next) => {
   const requestId = crypto.randomUUID()
   c.set('requestId', requestId)
 
-  await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+  if (!adminBootstrapChecked) {
+    await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+    adminBootstrapChecked = true
+  }
 
   await next()
 
@@ -41,6 +45,7 @@ app.route('/api/maven', mavenApiRoutes)
 app.get('/*', handleFileGet)
 app.head('/*', handleFileHead)
 app.put('/*', handleFilePut)
+app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)
 
 app.onError((error, c) => {

@@ -1,11 +1,51 @@
 import { Hono } from 'hono'
-import type { AppEnv } from '../env'
+import type { AccessPermission, AppEnv } from '../env'
 import { auth } from '../auth'
-import { listTokens, createToken, getToken, updateToken, deleteToken } from '../tokens'
+import { listTokens, createToken, updateToken, deleteToken } from '../tokens'
 import { getRepositoryPolicy, getSettings, updateSettings } from '../config'
-import { badRequest, jsonData, noContent } from '../shared'
+import { badRequest, jsonData, noContent, normalizePermissionPath } from '../shared'
+import { summarizeObjects } from '../storage'
 
 const authManager = auth({ permission: 'manage' })
+type PermissionAction = AccessPermission['actions'][number]
+const permissionActions = new Set<PermissionAction>(['read', 'write', 'delete', 'manage'])
+
+function isPermissionAction(action: string): action is PermissionAction {
+  return permissionActions.has(action as PermissionAction)
+}
+
+function normalizePermissions(input: Array<{ path: string; actions: string[] }> | undefined): AccessPermission[] {
+  if (!input) {
+    return [{ path: '/', actions: ['read'] }]
+  }
+  if (input.length === 0) {
+    throw badRequest('At least one permission is required')
+  }
+
+  return input.map(permission => {
+    if (!permission.path) {
+      throw badRequest('Permission path is required')
+    }
+
+    const actions = Array.from(new Set(permission.actions ?? []))
+    if (actions.length === 0) {
+      throw badRequest('Permission actions are required')
+    }
+
+    const normalizedActions: PermissionAction[] = []
+    for (const action of actions) {
+      if (!isPermissionAction(action)) {
+        throw badRequest(`Unsupported permission action: ${action}`)
+      }
+      normalizedActions.push(action)
+    }
+
+    return {
+      path: normalizePermissionPath(permission.path),
+      actions: normalizedActions,
+    }
+  })
+}
 
 export const adminRoutes = new Hono<AppEnv>()
 
@@ -13,15 +53,16 @@ adminRoutes.get('/stats', authManager, async (c) => {
   const kv = c.env.MAVEN_KV
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
 
-  const [reqsRaw, errsRaw] = await Promise.all([
+  const [reqsRaw, errsRaw, objectStats] = await Promise.all([
     kv.get(`stats:daily:${today}:requests`),
     kv.get(`stats:daily:${today}:errors`),
+    summarizeObjects(c.env.MAVEN_BUCKET),
   ])
 
   return jsonData(c, {
     repositories: 1,
-    objects: 0,
-    storageBytes: 0,
+    objects: objectStats.objects,
+    storageBytes: objectStats.storageBytes,
     requests24h: Number(reqsRaw) || 0,
     errors24h: Number(errsRaw) || 0,
   })
@@ -54,7 +95,7 @@ adminRoutes.post('/tokens', authManager, async (c) => {
     c.env.MAVEN_KV,
     body.name,
     secret,
-    body.permissions ?? [{ path: '/', actions: ['read'] }],
+    normalizePermissions(body.permissions),
     body.description,
   )
 
@@ -85,7 +126,7 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
     name: body.name,
     description: body.description,
     disabled: body.enabled !== undefined ? !body.enabled : undefined,
-    permissions: body.permissions,
+    permissions: body.permissions ? normalizePermissions(body.permissions) : undefined,
     secret: body.secret,
   })
 

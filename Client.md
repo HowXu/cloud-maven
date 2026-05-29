@@ -279,6 +279,23 @@ maven-client/
 - Maven 坐标推断区分 artifact 目录和 version 目录，避免长 groupId 路径误判。
 - `API.md` 和 `STRUCT.md` 已补充前端读取 `maven-metadata.xml` 的 Worker 配合要求。
 
+### 第三阶段
+
+- Admin token API 已扩展到 create/update/delete。
+- Admin 页面已支持 token 创建、启用/禁用、删除，并展示 token 权限范围。
+- token 创建成功后会展示一次性 secret，并提供复制入口。
+- Overview 已接入 artifact 上传弹窗和单文件删除确认弹窗，操作成功后刷新当前目录。
+
+### 当前前端进度快照
+
+更新时间：2026-05-29
+
+- 第一阶段：基本完成。已具备 Vue 3 + TypeScript + Vite 骨架、UnoCSS、Hash 路由、基础布局、主题初始化、Header、Tabs 和 LoginModal。
+- 第二阶段：基本完成。已具备目录详情加载、内存缓存、面包屑、文件列表、文件下载、Toast 反馈、空/加载/错误状态，以及 Maven/Gradle Kotlin/Gradle Groovy 依赖片段生成。
+- 第三阶段：继续推进。Admin 页面已根据登录态和 manager 角色展示不同状态，已对接 stats 和 token 列表读取，并支持 token 创建、启用/禁用、删除、创建后 secret 复制；仓库浏览页已支持 artifact 上传和单文件删除后刷新当前目录。token 编辑、权限编辑器和目录级删除仍待实现。
+- 第四阶段：部分完成。Settings 页面已实现 manager 权限保护、配置表单和保存流程，暗色模式基础可用；移动端细节、视觉联调和构建校验仍待完成。
+- 验证状态：遵守 `PROJECT.md` 约束，未执行 npm 安装、构建、测试或开发服务命令；当前判断来自文件结构和源码静态巡检。
+
 ## 风险与待确认项
 
 - 后端鉴权方案需要确认：沿用 Reposilite 的 `xBasic` token 风格，还是使用 Bearer token。
@@ -286,3 +303,4 @@ maven-client/
 - 是否允许匿名读取会影响 Overview 首屏加载逻辑。
 - 上传 artifact 是否要求前端上传单文件，还是支持一次上传 jar、pom、sources、javadoc 和 checksum 文件组。
 - `maven-metadata.xml` 是后端生成还是前端辅助触发生成，需要后端方案确认。
+- 早期 Auth 草案仍列出 `POST /api/auth/login`，但当前前端实现已改为通过 `GET /api/auth/me` 携带 `xBasic` Header 完成登录校验，后续需要清理草案或在 `API.md` 中明确说明。

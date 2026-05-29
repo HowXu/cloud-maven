@@ -17,6 +17,7 @@
     "preview:client": "node scripts/workspace.mjs run client preview",
     "check": "node scripts/workspace.mjs task check",
     "test": "node scripts/workspace.mjs task test",
+    "test:client": "node scripts/workspace.mjs run client test",
     "test:worker": "node scripts/workspace.mjs run worker test",
     "typecheck:worker": "node scripts/workspace.mjs run worker typecheck",
     "deploy": "node scripts/workspace.mjs run worker deploy",

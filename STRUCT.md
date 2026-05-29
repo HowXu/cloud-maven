@@ -69,7 +69,7 @@
 
 ### 2026-05-29 - client -> worker
 
-状态：待处理
+状态：处理中
 来源：Client.md、API.md、maven-client/src/api/*
 需求：
 - 按 `API.md` 实现前端第一阶段需要的 Auth、Maven Repository、Admin、Settings 接口。
@@ -88,3 +88,13 @@
 - 目录详情接口是前端减少 R2/KV 请求次数的关键，应避免前端逐文件探测。
 - 文件下载应直接返回原始文件流，并设置 `ETag`、`Cache-Control` 和合适的 `Content-Type`。
 - 当前环境禁止 npm 相关命令，执行安装、构建、测试或部署前需要先告知。
+
+当前进展（2026-05-29）：
+- 已实现 `POST /api/auth/login`、`GET /api/auth/me`、`GET /api/auth/session`、`POST /api/auth/logout`，兼容 `xBasic`、Bearer Session 和 Cookie Session。
+- 已实现 `GET /api/maven/details/:path*`，目录项包含路径、类型、大小、更新时间、内容类型和读写删除权限。
+- 已实现 Maven 文件 `GET/HEAD/PUT/POST/DELETE /*`，支持 R2 文件流返回、上传、单文件/目录删除、checksum 生成、缓存头、ETag 和内容类型。
+- 已实现 Admin 低成本近似统计、Token 管理和 Settings 读写接口。
+- 已实现 `POST /api/maven/generate/pom/:path*`、`GET /api/maven/versions/:path*` 和 `DELETE /api/maven/artifacts/:path*`。
+- 已补充 `maven-worker/README.md`，说明 Cloudflare R2/KV、环境变量、首个管理员 Token 和当前实现边界。
+- 待补齐：metadata 自动维护策略和生产级统计成本控制细节。
+- 当前后端交接只要求 Worker 开发，不要求执行 npm 构建、测试、开发服务或部署验证。
