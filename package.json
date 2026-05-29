@@ -1,0 +1,25 @@
+{
+  "name": "cloud-maven",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "maven-client",
+    "maven-worker"
+  ],
+  "scripts": {
+    "list": "node scripts/workspace.mjs list",
+    "dev": "node scripts/workspace.mjs task dev",
+    "dev:client": "node scripts/workspace.mjs run client dev",
+    "dev:worker": "node scripts/workspace.mjs run worker dev",
+    "build": "node scripts/workspace.mjs task build",
+    "build:client": "node scripts/workspace.mjs run client build",
+    "preview:client": "node scripts/workspace.mjs run client preview",
+    "check": "node scripts/workspace.mjs task check",
+    "test": "node scripts/workspace.mjs task test",
+    "test:worker": "node scripts/workspace.mjs run worker test",
+    "typecheck:worker": "node scripts/workspace.mjs run worker typecheck",
+    "deploy": "node scripts/workspace.mjs run worker deploy",
+    "deploy:worker": "node scripts/workspace.mjs run worker deploy"
+  }
+}

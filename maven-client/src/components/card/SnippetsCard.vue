@@ -1,0 +1,256 @@
+<script setup lang="ts">
+import { Copy } from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+
+import { createArtifactUrl } from "@/api/client";
+import { mavenApi } from "@/api/maven";
+import { useClipboardToast } from "@/composables/useClipboardToast";
+import {
+  type ArtifactCoordinates,
+  type MavenMetadata,
+  useMavenMetadata,
+} from "@/composables/useMavenMetadata";
+
+const props = defineProps<{
+  path: string;
+}>();
+
+type SnippetTab = "Maven" | "Gradle Kotlin" | "Gradle Groovy";
+
+const {
+  coordinatesFromPath,
+  mergeMetadata,
+  metadataCandidates,
+  parseMetadata,
+} = useMavenMetadata();
+const { copy } = useClipboardToast();
+
+const selected = ref<SnippetTab>("Maven");
+const snippetTabs = ["Maven", "Gradle Kotlin", "Gradle Groovy"] as const;
+const coordinates = ref<ArtifactCoordinates | null>(null);
+const metadata = ref<MavenMetadata | null>(null);
+const metadataLoading = ref(false);
+const metadataNote = ref("");
+let metadataRequestId = 0;
+
+const repositoryId = computed(() => props.path.split("/").filter(Boolean)[0] || "releases");
+const repositoryUrl = computed(() => {
+  const url = createArtifactUrl(repositoryId.value);
+  return new URL(url, window.location.origin).toString();
+});
+
+const effectiveVersion = computed(() => coordinates.value?.version || "VERSION");
+
+const repositorySnippet = computed(() => {
+  if (selected.value === "Gradle Kotlin") {
+    return `repositories {\n  maven {\n    name = "${repositoryId.value}"\n    url = uri("${repositoryUrl.value}")\n  }\n}`;
+  }
+
+  if (selected.value === "Gradle Groovy") {
+    return `repositories {\n  maven {\n    name = '${repositoryId.value}'\n    url = uri('${repositoryUrl.value}')\n  }\n}`;
+  }
+
+  return `<repository>\n  <id>${repositoryId.value}</id>\n  <url>${repositoryUrl.value}</url>\n</repository>`;
+});
+
+const artifactSnippet = computed(() => {
+  const current = coordinates.value;
+
+  if (!current) {
+    return repositorySnippet.value;
+  }
+
+  if (selected.value === "Gradle Kotlin") {
+    return `implementation("${current.groupId}:${current.artifactId}:${effectiveVersion.value}")`;
+  }
+
+  if (selected.value === "Gradle Groovy") {
+    return `implementation '${current.groupId}:${current.artifactId}:${effectiveVersion.value}'`;
+  }
+
+  return `<dependency>\n  <groupId>${current.groupId}</groupId>\n  <artifactId>${current.artifactId}</artifactId>\n  <version>${effectiveVersion.value}</version>\n</dependency>`;
+});
+
+const snippet = computed(() => coordinates.value ? artifactSnippet.value : repositorySnippet.value);
+
+const loadMetadata = async (path: string) => {
+  const requestId = ++metadataRequestId;
+  const fallback = coordinatesFromPath(path);
+
+  selected.value = "Maven";
+  coordinates.value = fallback;
+  metadata.value = null;
+  metadataNote.value = fallback
+    ? "Looking for maven-metadata.xml..."
+    : "Select an artifact path to generate dependency snippets.";
+
+  if (!fallback) {
+    return;
+  }
+
+  metadataLoading.value = true;
+
+  try {
+    for (const candidate of metadataCandidates(path)) {
+      try {
+        const response = await mavenApi.content(candidate.metadataPath);
+        const parsed = parseMetadata(response.data);
+
+        if (requestId !== metadataRequestId) {
+          return;
+        }
+
+        if (parsed) {
+          metadata.value = parsed;
+          coordinates.value = mergeMetadata(candidate, parsed);
+          metadataNote.value = candidate.source === "version"
+            ? "Using artifact metadata from the parent path."
+            : "Using artifact metadata from this path.";
+          return;
+        }
+      } catch {
+        // Try the next Maven metadata candidate before falling back.
+      }
+    }
+
+    if (requestId === metadataRequestId) {
+      metadataNote.value = fallback.version
+        ? "Metadata was not found; using the version inferred from the path."
+        : "Metadata was not found; publish maven-metadata.xml or select a version path.";
+    }
+  } finally {
+    if (requestId === metadataRequestId) {
+      metadataLoading.value = false;
+    }
+  }
+};
+
+watch(
+  () => props.path,
+  (path) => {
+    loadMetadata(path);
+  },
+  { immediate: true },
+);
+
+const selectTab = (tab: (typeof snippetTabs)[number]) => {
+  selected.value = tab;
+};
+</script>
+
+<template>
+  <aside class="panel-surface rounded-lg p-5 lg:sticky lg:top-6 lg:self-start">
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="muted-label">Snippet</p>
+        <h2 class="font-semibold">{{ coordinates ? "Artifact details" : "Repository details" }}</h2>
+      </div>
+      <button class="icon-button" type="button" title="Copy snippet" @click="copy(snippet)">
+        <Copy class="h-4 w-4" />
+      </button>
+    </div>
+
+    <div v-if="coordinates" class="mb-4 grid gap-2 rounded-md bg-gray-50 p-3 text-xs dark:bg-gray-800">
+      <div class="metadata-row">
+        <span>Group</span>
+        <strong>{{ coordinates.groupId }}</strong>
+      </div>
+      <div class="metadata-row">
+        <span>Artifact</span>
+        <strong>{{ coordinates.artifactId }}</strong>
+      </div>
+      <div class="metadata-row">
+        <span>Version</span>
+        <strong>{{ effectiveVersion }}</strong>
+      </div>
+      <div v-if="metadata?.lastUpdated" class="metadata-row">
+        <span>Updated</span>
+        <strong>{{ metadata.lastUpdated }}</strong>
+      </div>
+    </div>
+
+    <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+      <span v-if="metadataLoading">Reading metadata...</span>
+      <span v-else>{{ metadataNote }}</span>
+    </p>
+
+    <div class="mb-4 flex flex-wrap gap-2">
+      <button
+        v-for="tab in snippetTabs"
+        :key="tab"
+        class="snippet-tab"
+        :class="{ selected: selected === tab }"
+        type="button"
+        @click="selectTab(tab)"
+      >
+        {{ tab }}
+      </button>
+    </div>
+
+    <transition name="slide-fade" mode="out-in">
+      <pre :key="selected + path + effectiveVersion" class="snippet-code"><code>{{ snippet }}</code></pre>
+    </transition>
+  </aside>
+</template>
+
+<style scoped>
+.metadata-row {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metadata-row span {
+  color: rgb(107 114 128);
+}
+
+.metadata-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.snippet-tab {
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.55rem;
+  color: rgb(75 85 99);
+  font-size: 0.78rem;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.snippet-tab:hover,
+.snippet-tab.selected {
+  background: rgb(243 244 246);
+  color: rgb(17 24 39);
+}
+
+.snippet-code {
+  min-height: 9rem;
+  overflow: auto;
+  border-radius: 0.5rem;
+  background: rgb(243 244 246);
+  padding: 1rem;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.dark .metadata-row span {
+  color: rgb(156 163 175);
+}
+
+.dark .snippet-tab {
+  color: rgb(209 213 219);
+}
+
+.dark .snippet-tab:hover,
+.dark .snippet-tab.selected {
+  background: rgb(31 41 55);
+  color: white;
+}
+
+.dark .snippet-code {
+  background: rgb(31 41 55);
+}
+</style>

@@ -1,0 +1,81 @@
+{
+  "documents": {
+    "project": {
+      "path": "PROJECT.md",
+      "description": "Cloud-Maven project goals and shared constraints"
+    },
+    "structure": {
+      "path": "STRUCT.md",
+      "description": "Cloud-Maven workspace structure and AGENT handoff contract"
+    },
+    "api": {
+      "path": "API.md",
+      "description": "Cloud-Maven shared API contract between client and worker"
+    },
+    "clientPlan": {
+      "path": "Client.md",
+      "description": "Cloud-Maven frontend design plan"
+    },
+    "workerPlan": {
+      "path": "Worker.md",
+      "description": "Cloud-Maven Worker backend design plan"
+    }
+  },
+  "projects": {
+    "client": {
+      "path": "maven-client",
+      "description": "Cloud-Maven Vue 3 + TypeScript repository UI"
+    },
+    "worker": {
+      "path": "maven-worker",
+      "description": "Cloud-Maven Cloudflare Worker API"
+    }
+  },
+  "tasks": {
+    "dev": {
+      "parallel": true,
+      "steps": [
+        {
+          "project": "client",
+          "script": "dev"
+        },
+        {
+          "project": "worker",
+          "script": "dev"
+        }
+      ]
+    },
+    "build": {
+      "steps": [
+        {
+          "project": "client",
+          "script": "build"
+        },
+        {
+          "project": "worker",
+          "script": "typecheck"
+        }
+      ]
+    },
+    "check": {
+      "steps": [
+        {
+          "project": "client",
+          "script": "build"
+        },
+        {
+          "project": "worker",
+          "script": "typecheck"
+        }
+      ]
+    },
+    "test": {
+      "steps": [
+        {
+          "project": "worker",
+          "script": "test"
+        }
+      ]
+    }
+  }
+}

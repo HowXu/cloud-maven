@@ -1,6 +1,10 @@
-# 项目目标
+# Cloud-Maven 项目目标
 
-依靠Cloudflare的kv存储 r2存储以及worker(serverless)构建一个可一键部署的Maven系统
+依靠 Cloudflare 的 KV 存储、R2 存储以及 Worker(Serverless) 构建一个可一键部署的 Cloud-Maven 系统。
+
+# 项目结构
+
+根目录下包含了worker和client两端，因此总体项目结构由根目录的配置文件负责，负责单一端的AGENT将本端的需求写入根目录的STRUCT.md文件，由特定的AGENT实现
 
 # 共同分析内容
 
@@ -9,6 +13,8 @@
 # 本机环境
 
 已经安装node.js，不需要进行maven测试
+
+npm相关命令已被禁止，如有需求请告知
 
 ## 前端要求
 
@@ -24,7 +30,7 @@
 
 ## 后端要求
 
-后端可以参考reposilite这个项目，但是可以相对简化，只需要纯粹的Mavne就可以了，不需要Plugin等
+后端可以参考reposilite这个项目，但是可以相对简化，只需要纯粹的Maven就可以了，不需要Plugin等
 
 前端需要的api都写在根目录的API.md中，按照其中的标准和需求完成
 
