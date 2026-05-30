@@ -16,7 +16,7 @@ bucket_name = "cloud-maven"
 
 [[kv_namespaces]]
 binding = "MAVEN_KV"
-id = "replace-with-kv-namespace-id"
+id = "cloud-maven"
 
 [vars]
 SESSION_TTL_SECONDS = "86400"
