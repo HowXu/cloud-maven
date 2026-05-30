@@ -89,6 +89,27 @@ maven-client/src/
 
 ## 需求交接记录
 
+### 2026-05-30 - 安全审计 -> 前端
+
+状态：待处理
+来源：安全审计 | `maven-client/src`
+需求：
+- 【高】清理并隔离目录缓存，避免登出/切换账号后泄露私有目录。`maven-client/src/composables/useRepository.ts:7` 使用全局 `Map`，`21-32` 只按 path 命中缓存；`maven-client/src/components/browser/FileBrowserView.vue:32-37` 登出时只强制刷新当前路径，其他已缓存私有路径仍可能在同一 SPA 会话内通过导航重新显示。建议提供 `clearRepositoryCache()`，在 login/logout/session 初始化失败时清空；或把 token id/匿名态纳入 cache key，并对私有响应禁用缓存。
+- 【高】移除 token secret 的 localStorage 持久化。`maven-client/src/composables/useSession.ts:11-23` 从 localStorage 读取并保存 token name/secret，`maven-client/src/api/client.ts:15-25` 再写入全局 Authorization 头；一旦有 XSS、浏览器扩展或同源脚本风险，长期凭证会被直接读取。建议优先使用后端已支持的 HttpOnly Cookie Session，只在内存中保存会话详情；若保留 xBasic，应改为显式“记住我”且默认 sessionStorage/内存态，并在 `/api/auth/me` 失败时清除本地凭证和 Authorization 头。
+- 【中】修复 snippet 高亮的 `v-html` 失败回退。`maven-client/src/components/card/SnippetsCard.vue:154-160` 在 highlight.js 抛错时返回原始 snippet，`215` 使用 `v-html` 注入；snippet 来源包含 settings、路径和 maven-metadata.xml 内容。建议失败时 HTML escape，或改为纯文本渲染/`textContent` 后再高亮，避免任何未经转义的字符串进入 `v-html`。
+- 【中】统一前端权限路径匹配逻辑。`maven-client/src/composables/useSession.ts:72-73` 使用 `path.startsWith(permission.path)`，没有路径段边界，`/com/example` 会匹配 `/com/exampleevil`；`maven-client/src/components/browser/FileList.vue:31` 依赖该结果决定是否展示删除入口。后端仍应最终鉴权，但前端会误展示危险操作。建议复用后端“相等或 `${permPath}/` 前缀”的规则，并特殊处理 `/`。
+- 【低】上传路径缺少前端侧安全校验。`maven-client/src/components/browser/UploadArtifactModal.vue:24-27` 直接拼接目标文件名，`46-55` 直接上传；`maven-client/src/api/maven.ts:4/21-27` 只去掉前导斜杠。虽然后端会拒绝 `..`、反斜杠、重复斜杠和 `/api/*`，前端仍应提前校验并给出明确错误，减少误操作和异常请求。
+- 【低】介绍图使用第三方明文 HTTP 资源。`maven-client/src/intro.config.ts:8` 当前为 `http://q1.qlogo.cn/...`，`maven-client/src/components/common/IntroCard.vue:12` 直接渲染到 `<img>`。HTTPS 部署时可能产生混合内容拦截，并向第三方泄露访问者请求信息。建议改为 HTTPS、自托管静态资源或 R2 资源，并为外部图片设置合适的 `referrerpolicy`。
+验收：
+- 登录、登出、切换账号、`/api/auth/me` 失败后，旧账号私有目录不会从缓存重新显示；新增用例覆盖“访问私有目录 -> 登出 -> 导航回旧路径”。
+- localStorage 中不再出现 `cloud-maven-token-secret`；刷新后会话依赖 HttpOnly Cookie 或显式短期存储；认证失败会清空 Authorization 头。
+- `SnippetsCard` 不再把未转义字符串传入 `v-html`；恶意 metadata/path/settings 文本只会作为文本显示。
+- 前端 `can(path, action)` 与后端路径权限规则一致；边界用例 `/com/example` 不匹配 `/com/exampleevil`。
+- 上传表单能在提交前拒绝不安全路径；介绍图不再依赖明文 HTTP 第三方 URL。
+备注：
+- 本次只审计前端，未修改 `maven-client/` 业务源码，未执行 npm/test 命令。
+- 已验证的正向点：多数模板使用 Vue mustache 自动转义；除 snippet 高亮外未发现其他 `v-html`/`innerHTML`；外链文件预览已带 `rel="noreferrer"`；Admin/Settings 页面前端有 manager 状态判断，但仍必须以后端鉴权为准。
+
 ### 2026-05-30 - 前端 -> 后端
 
 状态：已完成

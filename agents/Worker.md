@@ -115,6 +115,27 @@ maven-worker/test/
 
 ## 需求交接记录
 
+### 2026-05-30 - 安全审计 -> 后端
+
+状态：待处理
+来源：安全审计 | `maven-worker/src`
+需求：
+- 【高】修复目录详情接口越权枚举风险。`maven-worker/src/maven/index.ts:529-545` 的 `details()` 只要求「有任意有效 token」或仓库为 PUBLIC，就直接 `listObjects()`；`557-579` 会返回目录/文件名、路径、大小、更新时间和 contentType。PRIVATE/HIDDEN 仓库下，持有任意低权限 token 的用户可能枚举无 read 权限路径。建议在列目录前对当前路径执行 read 权限校验，或只返回调用者具备 read 权限的条目；根目录场景也应过滤不可读前缀。
+- 【高】收紧 CORS 凭据策略。`maven-worker/src/index.ts:26-32` 将任意 `Origin` 原样写入 `Access-Control-Allow-Origin`，同时启用 `Access-Control-Allow-Credentials: true`。建议改为后端可配置 allowlist，只对可信管理端 Origin 返回 credentials，并补充 `Vary: Origin`；未知 Origin 不应获得凭据型 CORS 响应。
+- 【中】限制带 `X-Generate-Checksums: true` 的上传体大小。`maven-worker/src/maven/index.ts:343-349` 在生成 checksum 时调用 `arrayBuffer()` 读完整请求体，写权限 token 可用大文件造成 Worker 内存/CPU 压力。建议增加 `Content-Length` 上限、缺失长度时拒绝 checksum 模式，或改为流式/异步摘要；同时让该行为受后端 settings 控制。
+- 【中】加固 token 更新接口的 secret 策略。`maven-worker/src/admin/index.ts:120-149` 接受调用方自定义 `secret` 并在响应中回显；`maven-worker/src/tokens/index.ts:142-145` 只要 secret 为 truthy 就直接重置哈希。建议改为服务端生成重置 secret，或至少校验长度/复杂度，并避免回显调用方提供的弱 secret。
+- 【中】补齐最后一个 manager 的更新保护。`maven-worker/src/tokens/index.ts:156-170` 只在删除 token 时阻止删除最后一个 manager，但 `admin/index.ts:130-136` + `tokens/index.ts:148-150` 允许把最后一个 manager 禁用或移除 `manage` 权限，可能导致管理面锁死。建议在 updateToken 前后检查是否仍至少存在一个启用的 manager。
+- 【低】补齐 settings/policy 类型校验并更新部署配置。`maven-worker/src/config/index.ts:67-75` 直接合并请求 patch，布尔字段若传入字符串可能被 truthy 处理；`maven-worker/wrangler.toml:15/32/47` 仍使用旧的 `allowReleaseRedeploy/allowSnapshotRedeploy` 字段，当前代码只识别 `allowOverwrite`。建议对 settings 请求做运行时 schema 校验，并同步 wrangler 默认变量。
+验收：
+- PRIVATE/HIDDEN 仓库下，无 read 权限 token 请求 `/api/maven/details` 与任意子路径返回 403 或只返回可读条目；新增集成测试覆盖根目录和子目录枚举。
+- 非 allowlist Origin 不再获得 credentialed CORS；可信 Origin 请求仍正常，响应包含正确的 `Vary: Origin`。
+- checksum 模式大文件上传被明确拒绝或走安全的流式/异步实现；缺失/超限 `Content-Length` 有测试覆盖。
+- token reset 不接受弱 secret，或只返回服务端生成的一次性 secret；最后一个启用 manager 无法被删除、禁用或移除 manage 权限。
+- settings API 对 boolean/string 字段有运行时校验；`wrangler.toml` 的默认策略字段与代码一致。
+备注：
+- 本次只审计后端，未审计前端。未执行 npm/test 命令。
+- 已验证的正向点：Admin API 均挂载 `auth({ permission: 'manage' })`；路径规范化已阻止 `..`、反斜杠、重复斜杠、控制字符和 `/api/*` Maven 路径；`hasPermission` 根路径 `/` 匹配缺陷当前已修复；token secret 使用 PBKDF2-SHA256 100,000 次迭代和随机 salt。
+
 ### 2026-05-30 - 前端 -> 后端
 
 状态：已完成
