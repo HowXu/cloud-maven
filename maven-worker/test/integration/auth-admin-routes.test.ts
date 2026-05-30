@@ -214,7 +214,7 @@ describe('Worker auth and admin routes', () => {
       body: JSON.stringify({
         title: 'Updated Repo Title',
         baseUrl: 'https://updated.example.com',
-        defaultRepository: '',
+        defaultRepository: 'My Repo',
         anonymousRead: false,
         allowOverwrite: true,
         generateChecksums: true,
@@ -269,6 +269,96 @@ describe('Worker auth and admin routes', () => {
     await expect(response.json()).resolves.toMatchObject({
       code: 'BAD_REQUEST',
       message: 'Unsupported permission action: publish',
+    })
+  })
+
+  it('authenticates with standard HTTP Basic auth header', async () => {
+    const { token, secret } = await createAuthHeader()
+
+    const login = await SELF.fetch(requestUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: token.name,
+        secret,
+      }),
+    })
+    const loginBody = await login.json() as {
+      token: { id: string; name: string }
+      session: { token: string }
+    }
+
+    expect(login.status).toBe(200)
+    expect(loginBody.token.name).toBe(token.name)
+
+    const session = await SELF.fetch(requestUrl('/api/auth/session'), {
+      headers: {
+        Authorization: `Basic ${btoa(`${token.name}:${secret}`)}`,
+      },
+    })
+
+    expect(session.status).toBe(200)
+    await expect(session.json()).resolves.toMatchObject({
+      token: {
+        id: token.id,
+        name: token.name,
+      },
+    })
+  })
+
+  it('rejects malformed Basic auth header', async () => {
+    const { token } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/auth/session'), {
+      headers: {
+        Authorization: 'Basic invalid_base64!',
+      },
+    })
+
+    expect(response.status).toBe(401)
+  })
+
+  it('rejects empty defaultRepository in settings update', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        defaultRepository: '',
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Default repository name cannot be empty',
+    })
+  })
+
+  it('rejects whitespace-only defaultRepository in settings update', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        defaultRepository: '   ',
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Default repository name cannot be empty',
     })
   })
 

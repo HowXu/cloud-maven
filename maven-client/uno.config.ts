@@ -28,7 +28,7 @@ export default defineConfig({
     },
   },
   shortcuts: {
-    "page-shell": "min-h-screen bg-cloud-wash text-cloud-ink dark:bg-black dark:text-white",
+    "page-shell": "min-h-screen w-full bg-cloud-wash text-cloud-ink dark:bg-black dark:text-white",
     "content-container": "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-10",
     "panel-surface": "border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900",
     "soft-button": "inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition-colors duration-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800",

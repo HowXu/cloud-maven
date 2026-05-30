@@ -62,6 +62,8 @@ describe('config settings', () => {
     const settings = await getSettings(kv)
 
     expect(settings.title).toBe('Cloud-Maven')
+    expect(settings.baseUrl).toBe('')
+    expect(settings.defaultRepository).toBe('Cloud Maven')
     expect(settings.anonymousRead).toBe(true)
     expect(settings.allowOverwrite).toBe(false)
     expect(settings.generateChecksums).toBe(false)

@@ -110,3 +110,16 @@ maven-client/src/
 - 后端已支持 `intro_image` KV key 的读写
 - 后端已移除 release/snapshots 区分
 - 后端已修复 hasPermission 根路径匹配 bug
+
+### 2026-05-30 - 测试 -> 前端
+
+状态：已完成
+来源：agents/Test.md | maven-client/src/composables/useRepository.ts
+需求：
+- `useRepository` composable 缺少 `canDelete` 计算属性暴露。`RepositoryDetails` 类型已新增 `canDelete: boolean`，mock 数据已包含该字段，但 composable 未像 `canWrite` 那样导出 `canDelete` computed，导致组件无法使用。
+- 需在 `useRepository` 中添加 `const canDelete = computed(() => details.value?.canDelete === true)` 并导出。
+当前进展：
+- `useRepository.ts:16` 已添加 `canDelete` computed 并导出。
+验收：
+- `useRepository` 返回对象中有 `canDelete` computed
+- 测试文件 `useRepository.test.ts` 中已有 mock 数据支持，添加对应测试用例即可验证

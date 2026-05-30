@@ -44,10 +44,7 @@ const submit = async () => {
     <VueFinalModal v-model="show" class="flex items-center justify-center px-4">
       <div class="modal-panel">
         <div class="mb-5 flex items-center justify-between">
-          <div>
-            <p class="muted-label">Access token</p>
-            <h2 class="text-lg font-semibold">Sign in</h2>
-          </div>
+          <h2 class="text-lg font-semibold m-0">Sign in</h2>
           <button class="icon-button" type="button" @click="close">
             <X class="h-4 w-4" />
           </button>

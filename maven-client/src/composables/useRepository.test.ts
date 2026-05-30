@@ -117,7 +117,7 @@ describe("useRepository", () => {
 
     it("returns empty array when no entries", async () => {
       const repo = useRepository();
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: { path: "empty", parentPath: null, canRead: true, canWrite: false, canDelete: false, entries: [] } } as unknown as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: { path: "empty", parentPath: null, canRead: true, canWrite: false, canDelete: false, entries: [] } } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("empty");
 

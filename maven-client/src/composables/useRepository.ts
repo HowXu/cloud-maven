@@ -13,6 +13,7 @@ export function useRepository() {
 
   const entries = computed(() => details.value?.entries ?? []);
   const canWrite = computed(() => details.value?.canWrite === true);
+  const canDelete = computed(() => details.value?.canDelete === true);
 
   const load = async (path: string, force = false) => {
     const normalized = path.replace(/^\/+/, "");
@@ -55,6 +56,7 @@ export function useRepository() {
     loading,
     error,
     canWrite,
+    canDelete,
     load,
     refresh,
   };

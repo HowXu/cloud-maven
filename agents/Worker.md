@@ -134,3 +134,18 @@ maven-worker/test/
 - `DEFAULT_SETTINGS`（`config/index.ts:12-20`）不包含 `introImage`
 - `admin/index.ts` GET/PUT `/settings` 路由只返回 title/baseUrl/defaultRepository/anonymousRead/allowOverwrite/generateChecksums/maintainMetadata
 - 全项目 grep 确认无 `introImage` 或 `intro_image` 残留引用
+
+### 2026-05-30 - 测试 -> 后端
+
+状态：已完成
+来源：agents/Worker.md | maven/index.ts:96
+需求：
+- `ensureRedeployAllowed` 第 96 行只豁免了 `maven-metadata.xml` 自身的重上传检查，但没有豁免其 checksum 文件（`maven-metadata.xml.sha1`、`maven-metadata.xml.md5` 等）
+- Maven publish 会在上传 `maven-metadata.xml` 之后继续上传 `.sha1`、`.md5` checksum 文件，导致 409 Conflict
+验收：
+- `maven-metadata.xml.sha1` 和 `maven-metadata.xml.md5` 在 `allowOverwrite: false` 时重新上传返回 201 而非 409
+- 集成测试 `maven-routes.test.ts` 新增的两条 metadata checksum 用例通过
+当前进展：
+- `maven/index.ts:96-97` 改为按文件名判断：`name === 'maven-metadata.xml' || name.startsWith('maven-metadata.xml.')`，同时豁免 metadata XML 及其所有 checksum 变体（.sha1/.md5/.sha256/.sha512）
+备注：
+- 测试已先行添加到 `maven-worker/test/integration/maven-routes.test.ts`，包含「maven-metadata.xml 重上传」和「maven-metadata.xml.sha1 重上传」两条用例，后者当前预期会失败（409），修复后应通过

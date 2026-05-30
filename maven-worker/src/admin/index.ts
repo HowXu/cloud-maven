@@ -186,6 +186,9 @@ adminRoutes.put('/settings', authManager, async (c) => {
   }>().catch(() => null)
 
   if (!body) throw badRequest('Invalid request body')
+  if (body.defaultRepository !== undefined && !body.defaultRepository.trim()) {
+    throw badRequest('Default repository name cannot be empty')
+  }
 
   const settings = await updateSettings(c.env.MAVEN_KV, body)
 

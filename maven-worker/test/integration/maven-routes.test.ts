@@ -163,6 +163,41 @@ describe('Worker Maven routes', () => {
     expect(duplicate.status).toBe(409)
   })
 
+  it('allows re-uploading maven-metadata.xml even when overwrite is disabled', async () => {
+    const authHeader = await createAuthHeader()
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/maven-metadata.xml`
+    await env.MAVEN_BUCKET!.put(path, '<metadata />', {
+      httpMetadata: { contentType: 'application/xml' },
+    })
+
+    const response = await SELF.fetch(requestUrl(`/${path}`), {
+      method: 'PUT',
+      headers: authHeader,
+      body: '<metadata><updated /></metadata>',
+    })
+
+    expect(response.status).toBe(201)
+    const stored = await env.MAVEN_BUCKET!.get(path)
+    await expect(stored!.text()).resolves.toBe('<metadata><updated /></metadata>')
+  })
+
+  it('allows re-uploading maven-metadata.xml.sha1 checksum', async () => {
+    const authHeader = await createAuthHeader()
+    const base = `releases/com/example/demo/${crypto.randomUUID()}`
+    const sha1Path = `${base}/maven-metadata.xml.sha1`
+    await env.MAVEN_BUCKET!.put(sha1Path, 'old-sha1')
+
+    const response = await SELF.fetch(requestUrl(`/${sha1Path}`), {
+      method: 'PUT',
+      headers: authHeader,
+      body: 'new-sha1',
+    })
+
+    expect(response.status).toBe(201)
+    const stored = await env.MAVEN_BUCKET!.get(sha1Path)
+    await expect(stored!.text()).resolves.toBe('new-sha1')
+  })
+
   it('returns checksum values when checksum generation is requested', async () => {
     const authHeader = await createAuthHeader()
     const path = `releases/com/example/demo/${crypto.randomUUID()}/demo-1.0.0.jar`
@@ -336,5 +371,76 @@ describe('Worker Maven routes', () => {
 
     expect(authorized.status).toBe(200)
     await expect(authorized.text()).resolves.toBe('<project />')
+  })
+
+  it('downloads a file via GET /api/maven/upload/:path', async () => {
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/demo.jar`
+    await env.MAVEN_BUCKET!.put(path, 'upload-download-content', {
+      httpMetadata: { contentType: 'application/java-archive' },
+    })
+
+    const response = await SELF.fetch(requestUrl(`/api/maven/upload/${path}`))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toBe('application/java-archive')
+    await expect(response.text()).resolves.toBe('upload-download-content')
+  })
+
+  it('returns file metadata via HEAD /api/maven/upload/:path', async () => {
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/demo.jar`
+    await env.MAVEN_BUCKET!.put(path, 'head-check-content', {
+      httpMetadata: { contentType: 'application/java-archive' },
+    })
+
+    const response = await SELF.fetch(requestUrl(`/api/maven/upload/${path}`), {
+      method: 'HEAD',
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toBe('application/java-archive')
+    expect(response.headers.get('Content-Length')).toBe(String('head-check-content'.length))
+  })
+
+  it('uploads a file via PUT /api/maven/upload/:path', async () => {
+    const authHeader = await createAuthHeader()
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/demo.jar`
+
+    const response = await SELF.fetch(requestUrl(`/api/maven/upload/${path}`), {
+      method: 'PUT',
+      headers: authHeader,
+      body: 'upload-put-content',
+    })
+
+    expect(response.status).toBe(201)
+
+    const stored = await env.MAVEN_BUCKET!.get(path)
+    await expect(stored!.text()).resolves.toBe('upload-put-content')
+  })
+
+  it('uploads a file via POST /api/maven/upload/:path', async () => {
+    const authHeader = await createAuthHeader()
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/demo.jar`
+
+    const response = await SELF.fetch(requestUrl(`/api/maven/upload/${path}`), {
+      method: 'POST',
+      headers: authHeader,
+      body: 'upload-post-content',
+    })
+
+    expect(response.status).toBe(201)
+
+    const stored = await env.MAVEN_BUCKET!.get(path)
+    await expect(stored!.text()).resolves.toBe('upload-post-content')
+  })
+
+  it('requires authentication for upload via /api/maven/upload/:path', async () => {
+    const path = `releases/com/example/demo/${crypto.randomUUID()}/demo.jar`
+
+    const anonymous = await SELF.fetch(requestUrl(`/api/maven/upload/${path}`), {
+      method: 'PUT',
+      body: 'no-auth-content',
+    })
+
+    expect(anonymous.status).toBe(401)
   })
 })

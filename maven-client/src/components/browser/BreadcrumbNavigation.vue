@@ -20,7 +20,7 @@ const crumbs = computed(() => {
     <router-link class="breadcrumb-link" to="/">root</router-link>
     <template v-for="crumb in crumbs" :key="crumb.to">
       <span class="text-gray-400">/</span>
-      <router-link class="breadcrumb-link" :to="crumb.to">{{ crumb.label }}</router-link>
+      <router-link class="breadcrumb-link max-w-48 truncate" :to="crumb.to">{{ crumb.label }}</router-link>
     </template>
   </nav>
 </template>

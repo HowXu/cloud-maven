@@ -7,6 +7,7 @@ import { createArtifactUrl } from "@/api/client";
 import { mavenApi } from "@/api/maven";
 import DeleteArtifactModal from "@/components/browser/DeleteArtifactModal.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
+import { useSession } from "@/composables/useSession";
 import type { RepositoryEntry } from "@/types";
 
 const props = defineProps<{
@@ -26,6 +27,8 @@ const sortedEntries = computed(() => [...props.entries].sort((left, right) => {
   return left.name.localeCompare(right.name);
 }));
 const downloadingPath = ref<string | null>(null);
+const session = useSession();
+const canDelete = computed(() => session.can(props.path, "delete") || session.can(props.path, "manage"));
 
 const childPath = (entry: RepositoryEntry) => {
   const base = props.path.replace(/^\/+|\/+$/g, "");
@@ -126,8 +129,8 @@ const downloadEntry = async (entry: RepositoryEntry) => {
         <span class="truncate font-medium">{{ entry.name }}</span>
       </a>
 
-      <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ formatSize(entry.size) }}</span>
-      <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 md:block">{{ formatDate(entry.updatedAt) }}</span>
+      <span v-if="entry.type !== 'DIRECTORY'" class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ formatSize(entry.size) }}</span>
+      <span v-if="entry.type !== 'DIRECTORY'" class="hidden text-right text-xs text-gray-500 dark:text-gray-400 md:block">{{ formatDate(entry.updatedAt) }}</span>
 
       <div v-if="entry.type === 'FILE'" class="entry-actions">
         <button
@@ -140,10 +143,10 @@ const downloadEntry = async (entry: RepositoryEntry) => {
           <LoaderCircle v-if="downloadingPath === childPath(entry).replace(/^\/+/, '')" class="h-4 w-4 animate-spin" />
           <HardDriveDownload v-else class="h-4 w-4" />
         </button>
-        <DeleteArtifactModal :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
+        <DeleteArtifactModal v-if="canDelete" :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
       </div>
       <div v-else class="entry-actions">
-        <DeleteArtifactModal :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
+        <DeleteArtifactModal v-if="canDelete" :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
       </div>
     </div>
   </div>
@@ -186,6 +189,7 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   align-items: center;
   gap: 0.75rem;
   color: inherit;
+  overflow: hidden;
 }
 
 .entry-actions {

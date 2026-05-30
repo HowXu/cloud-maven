@@ -35,7 +35,7 @@ const metadataLoading = ref(false);
 const metadataNote = ref("");
 let metadataRequestId = 0;
 
-const repositoryId = computed(() => props.repositoryId || "");
+const repositoryId = computed(() => props.repositoryId || "Cloud Maven");
 const repositoryUrl = computed(() => {
   const prefix = import.meta.env.VITE_API_BASE_URL || "";
   return prefix ? new URL(prefix, window.location.origin).toString() : window.location.origin;
@@ -152,14 +152,9 @@ const highlightedCode = computed(() => {
 
 <template>
   <aside class="panel-surface lift rounded-lg p-5 sm:sticky sm:top-6 sm:self-start">
-    <div class="mb-4 flex items-center justify-between gap-3">
-      <div>
-        <p class="muted-label">Snippet</p>
-        <h2 class="font-semibold">{{ coordinates ? "Artifact details" : "Repository details" }}</h2>
-      </div>
-      <button class="icon-button" type="button" title="Copy snippet" @click="copy(snippet)">
-        <Copy class="h-4 w-4" />
-      </button>
+    <div class="mb-4">
+      <p class="muted-label">Snippet</p>
+      <h2 class="font-semibold">{{ coordinates ? "Artifact details" : "Repository details" }}</h2>
     </div>
 
     <div v-if="coordinates" class="mb-4 grid gap-2 rounded-md bg-gray-50 p-3 text-xs dark:bg-gray-800">
@@ -186,16 +181,21 @@ const highlightedCode = computed(() => {
       <span v-else>{{ metadataNote }}</span>
     </p>
 
-    <div class="mb-4 flex flex-wrap gap-2">
-      <button
-        v-for="tab in snippetTabs"
-        :key="tab"
-        class="snippet-tab"
-        :class="{ selected: selected === tab }"
-        type="button"
-        @click="selectTab(tab)"
-      >
-        {{ tab }}
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-2">
+        <button
+          v-for="tab in snippetTabs"
+          :key="tab"
+          class="snippet-tab"
+          :class="{ selected: selected === tab }"
+          type="button"
+          @click="selectTab(tab)"
+        >
+          {{ tab }}
+        </button>
+      </div>
+      <button class="icon-button" type="button" title="Copy snippet" @click="copy(snippet)">
+        <Copy class="h-4 w-4" />
       </button>
     </div>
 

@@ -92,6 +92,10 @@ async function ensureDeleteAccess(c: Context<AppEnv>, path: string): Promise<Tok
 
 async function ensureRedeployAllowed(c: Context<AppEnv>, path: string): Promise<void> {
   if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) return
+
+  const name = path.split('/').pop() ?? ''
+  if (name === 'maven-metadata.xml' || name.startsWith('maven-metadata.xml.')) return
+
   const policy = await getRepositoryPolicy(c.env.MAVEN_KV)
   const existing = await headObject(c.env.MAVEN_BUCKET, path)
   if (!existing) return

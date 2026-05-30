@@ -34,6 +34,11 @@ onMounted(async () => {
       </button>
 
       <div class="flex items-center gap-2">
+        <button class="icon-button sm:hidden" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme">
+          <Sun v-if="isDark" class="h-4 w-4" />
+          <Moon v-else class="h-4 w-4" />
+        </button>
+
         <button class="icon-button sm:hidden" type="button" :title="menuOpen ? 'Close menu' : 'Open menu'" @click="menuOpen = !menuOpen">
           <X v-if="menuOpen" class="h-4 w-4" />
           <AlignJustify v-else class="h-4 w-4" />
