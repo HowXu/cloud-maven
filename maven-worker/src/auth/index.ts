@@ -117,11 +117,11 @@ export async function parseToken(c: Context<AppEnv>): Promise<AccessToken | null
   if (header) {
     const xBasic = parseXBasicHeader(header)
     if (xBasic) {
-      return validateToken(c.env.MAVEN_KV, xBasic.name, xBasic.secret)
+      return validateToken(c.env.MAVEN_KV, xBasic.name, xBasic.secret, c.env.ADMIN_BOOTSTRAP_TOKEN)
     }
     const basic = parseBasicHeader(header)
     if (basic) {
-      return validateToken(c.env.MAVEN_KV, basic.name, basic.secret)
+      return validateToken(c.env.MAVEN_KV, basic.name, basic.secret, c.env.ADMIN_BOOTSTRAP_TOKEN)
     }
   }
 
@@ -166,11 +166,22 @@ export function auth(opts?: {
 export const authApiRoutes = new Hono<AppEnv>()
 
 authApiRoutes.post('/login', async (c) => {
-  if (!c.env.MAVEN_KV) throw unauthorized()
   const body = await c.req.json<{ name?: string; secret?: string }>().catch(() => null)
   if (!body || !body.name || !body.secret) throw unauthorized()
 
-  const token = await validateToken(c.env.MAVEN_KV, body.name, body.secret)
+  if (!c.env.MAVEN_KV) {
+    if (body.name === 'admin' && body.secret === c.env.ADMIN_BOOTSTRAP_TOKEN) {
+      return jsonData(c, {
+        token: { id: 'dev', name: 'admin', description: 'Bootstrap administrator' },
+        roles: ['manager', 'publisher'],
+        permissions: [{ path: '/', actions: ['read', 'write', 'delete', 'manage'] }],
+        session: { token: 'dev-session', expiresAt: null },
+      })
+    }
+    throw unauthorized()
+  }
+
+  const token = await validateToken(c.env.MAVEN_KV, body.name, body.secret, c.env.ADMIN_BOOTSTRAP_TOKEN)
   if (!token) throw unauthorized()
   if (token.disabled) throw forbidden('Token is disabled')
 

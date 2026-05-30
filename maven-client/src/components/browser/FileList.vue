@@ -129,11 +129,12 @@ const downloadEntry = async (entry: RepositoryEntry) => {
         <span class="truncate font-medium">{{ entry.name }}</span>
       </a>
 
-      <span v-if="entry.type !== 'DIRECTORY'" class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ formatSize(entry.size) }}</span>
-      <span v-if="entry.type !== 'DIRECTORY'" class="hidden text-right text-xs text-gray-500 dark:text-gray-400 md:block">{{ formatDate(entry.updatedAt) }}</span>
+      <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ entry.type === 'DIRECTORY' ? '' : formatSize(entry.size) }}</span>
+      <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 md:block">{{ entry.type === 'DIRECTORY' ? '' : formatDate(entry.updatedAt) }}</span>
 
-      <div v-if="entry.type === 'FILE'" class="entry-actions">
+      <div class="entry-actions">
         <button
+          v-if="entry.type === 'FILE'"
           class="icon-button"
           type="button"
           :disabled="downloadingPath === childPath(entry).replace(/^\/+/, '')"
@@ -143,9 +144,7 @@ const downloadEntry = async (entry: RepositoryEntry) => {
           <LoaderCircle v-if="downloadingPath === childPath(entry).replace(/^\/+/, '')" class="h-4 w-4 animate-spin" />
           <HardDriveDownload v-else class="h-4 w-4" />
         </button>
-        <DeleteArtifactModal v-if="canDelete" :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
-      </div>
-      <div v-else class="entry-actions">
+        <span v-else class="inline-block w-9 shrink-0" />
         <DeleteArtifactModal v-if="canDelete" :base-path="path" :entry="{ name: entry.name, path: entry.path, type: entry.type }" @deleted="emit('changed')" />
       </div>
     </div>
@@ -197,7 +196,6 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   align-items: center;
   justify-content: flex-end;
   gap: 0.4rem;
-  min-width: calc(2.25rem + 2.25rem + 0.4rem);
 }
 
 .dark .entry-row {

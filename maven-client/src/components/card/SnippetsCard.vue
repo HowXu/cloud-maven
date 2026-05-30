@@ -52,7 +52,7 @@ const repositorySnippet = computed(() => {
   }
 
   if (selected.value === "Gradle Groovy") {
-    return `repositories {\n  maven {\n    name = '${repositoryId.value}'\n    url = uri('${repositoryUrl.value}')\n  }\n}`;
+    return `repositories {\n  maven {\n    name = "${repositoryId.value}"\n    url = uri("${repositoryUrl.value}")\n  }\n}`;
   }
 
   return `<repository>\n  <id>${repositoryId.value}</id>\n  <url>${repositoryUrl.value}</url>\n</repository>`;

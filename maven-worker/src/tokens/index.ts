@@ -177,9 +177,14 @@ export async function deleteToken(kv: KVNamespace, id: string): Promise<void> {
 export async function validateToken(
   kv: KVNamespace,
   name: string,
-  secret: string
+  secret: string,
+  bootstrapSecret?: string
 ): Promise<AccessToken | null> {
-  const token = await getTokenByName(kv, name)
+  let token = await getTokenByName(kv, name)
+  if (!token && bootstrapSecret) {
+    await ensureAdminToken(kv, bootstrapSecret)
+    token = await getTokenByName(kv, name)
+  }
   if (!token) return null
   if (token.disabled) return null
 
