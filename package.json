@@ -23,5 +23,6 @@
     "typecheck:client": "node scripts/workspace.mjs run client typecheck",
     "deploy": "node scripts/workspace.mjs run worker deploy",
     "deploy:worker": "node scripts/workspace.mjs run worker deploy"
-  }
+  },
+  "packageManager": "yarn@4.15.0"
 }
