@@ -265,9 +265,9 @@ export function hasPermission(
   for (const perm of permissions) {
     const permPath = perm.path.endsWith('/') ? perm.path.slice(0, -1) : perm.path
     if (permPath === '/' || normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)) {
-      if (permPath.length > bestPath.length) {
+      if (permPath.length > bestPath.length && perm.actions.includes(action as 'read' | 'write' | 'delete' | 'manage')) {
         bestPath = permPath
-        matched = perm.actions.includes(action as 'read' | 'write' | 'delete' | 'manage')
+        matched = true
       }
     }
   }

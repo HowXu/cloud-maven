@@ -7,9 +7,9 @@
 ## 关键文件
 
 - `../Worker.md` — 后端完整设计方案（架构、存储模型、权限、性能策略）
-- `../API.md` — 前后端 API 契约（必须严格按此实现）
-- `../STRUCT.md` — 需求交接记录（前端提需求的地方，在此回复完成状态）
+- `../Client.md` — 前端设计方案（接口调用参考）
 - `../USAGE.md` — 部署指南
+- `./Client.md` — 前端需求交接记录（前端提需求的地方，在此回复完成状态）
 
 ## 技术栈
 
@@ -73,9 +73,7 @@ maven-worker/test/
 ## 核心约定
 
 ### API 实现
-- 严格按照 `API.md` 的路径、请求/响应格式、状态码实现
-- 如需修改 API 响应结构，必须同步更新 `API.md`
-- 所有 JSON 响应使用统一格式
+- 所有 API 响应使用统一 JSON 格式
 
 ### Maven 路径
 - Maven 路径直接映射到 R2 Key，格式：`{groupIdPath}/{artifactId}/{version}/{file}`
@@ -97,6 +95,6 @@ maven-worker/test/
 ## 注意事项
 
 - 不执行 npm 命令
-- 需要前端配合时写入 `STRUCT.md` 交接记录，不直接改前端代码
+- 需要前端配合时在 `./Client.md` 需求交接记录章节写入，不直接改前端代码
 - 后端只能操作 `maven-worker/` 目录
 - 不创建 `releases`/`snapshots` 默认仓库

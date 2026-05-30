@@ -123,6 +123,7 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
 
   if (!body) throw badRequest('Invalid request body')
 
+  const newSecret = body.secret
   const token = await updateToken(c.env.MAVEN_KV, id, {
     name: body.name,
     description: body.description,
@@ -131,14 +132,20 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
     secret: body.secret,
   })
 
-  return jsonData(c, {
+  const result: Record<string, unknown> = {
     id: token.id,
     name: token.name,
     description: token.description,
     enabled: !token.disabled,
     createdAt: token.createdAt,
     permissions: token.permissions,
-  })
+  }
+
+  if (newSecret) {
+    result.secret = newSecret
+  }
+
+  return jsonData(c, result)
 })
 
 adminRoutes.delete('/tokens/:id', authManager, async (c) => {

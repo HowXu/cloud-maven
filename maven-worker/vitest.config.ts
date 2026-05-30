@@ -5,8 +5,11 @@ export default defineWorkersConfig({
     globals: true,
     poolOptions: {
       workers: {
+        main: './src/index.ts',
         miniflare: {
-          compatibilityFlags: ['export_commonjs_default']
+          compatibilityFlags: ['export_commonjs_default'],
+          kvNamespaces: { MAVEN_KV: 'cloud-maven' },
+          r2Buckets: { MAVEN_BUCKET: 'cloud-maven' },
         }
       }
     }

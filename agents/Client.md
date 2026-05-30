@@ -7,9 +7,9 @@
 ## 关键文件
 
 - `../Client.md` — 前端完整设计方案（页面规划、技术栈、分阶段实施）
-- `../API.md` — 后端 API 契约（接口路径、请求/响应格式、状态码）
-- `../STRUCT.md` — 需求交接记录（向后端提需求的地方）
+- `../Worker.md` — 后端设计方案（接口路径、请求/响应格式、状态码）
 - `../workspace.config.json` — 任务编排配置
+- `./Worker.md` — 后端需求交接记录（向后端提需求的地方）
 
 ## 技术栈
 
@@ -59,7 +59,7 @@ maven-client/src/
 
 - 所有 API 调用通过 `src/api/` 下的模块进行
 - axios 实例在 `client.ts` 中，鉴权通过 `xBasic` header 或 Cookie Session
-- 需要新接口时，先在 `API.md` 中定义，再在 `STRUCT.md` 写交接记录给后端
+- 需要新接口时，在 `./Worker.md` 需求交接记录章节写入，不直接改 Worker 代码
 
 ### 状态管理
 
@@ -77,6 +77,6 @@ maven-client/src/
 ## 注意事项
 
 - 不执行 npm 命令
-- 需要后端配合时写入 `STRUCT.md` 交接记录，不直接改 Worker 代码
+- 需要后端配合时在 `./Worker.md` 需求交接记录章节写入，不直接改 Worker 代码
 - 前端只能操作 `maven-client/` 目录
 - 设计参考 reposilite 但保持简化，纯 Maven 场景
