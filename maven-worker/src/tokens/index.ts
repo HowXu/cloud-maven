@@ -259,18 +259,18 @@ export function hasPermission(
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
 
-  let bestPath = ''
-  let matched = false
+  const matchedPath = permissions
+    .filter(p => {
+      const permPath = p.path.endsWith('/') ? p.path.slice(0, -1) : p.path
+      return permPath === '/' || normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)
+    })
+    .sort((a, b) => {
+      const aPath = a.path.endsWith('/') ? a.path.slice(0, -1) : a.path
+      const bPath = b.path.endsWith('/') ? b.path.slice(0, -1) : b.path
+      return bPath.length - aPath.length
+    })[0]
 
-  for (const perm of permissions) {
-    const permPath = perm.path.endsWith('/') ? perm.path.slice(0, -1) : perm.path
-    if (permPath === '/' || normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)) {
-      if (permPath.length > bestPath.length && perm.actions.includes(action as 'read' | 'write' | 'delete' | 'manage')) {
-        bestPath = permPath
-        matched = true
-      }
-    }
-  }
+  if (!matchedPath) return false
 
-  return matched
+  return matchedPath.actions.includes(action as 'read' | 'write' | 'delete' | 'manage')
 }

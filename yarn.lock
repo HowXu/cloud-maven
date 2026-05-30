@@ -2190,7 +2190,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/runner@npm:3.2.4":
+"@vitest/runner@npm:3.2.4, @vitest/runner@npm:^3.2.0":
   version: 3.2.4
   resolution: "@vitest/runner@npm:3.2.4"
   dependencies:
@@ -2201,7 +2201,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/snapshot@npm:3.2.4":
+"@vitest/snapshot@npm:3.2.4, @vitest/snapshot@npm:^3.2.0":
   version: 3.2.4
   resolution: "@vitest/snapshot@npm:3.2.4"
   dependencies:
@@ -2740,6 +2740,8 @@ __metadata:
   dependencies:
     "@cloudflare/vitest-pool-workers": "npm:^0.8.70"
     "@cloudflare/workers-types": "npm:^4.20250906.0"
+    "@vitest/runner": "npm:^3.2.0"
+    "@vitest/snapshot": "npm:^3.2.0"
     hono: "npm:^4.7.0"
     typescript: "npm:^5.8.0"
     vitest: "npm:^3.2.0"

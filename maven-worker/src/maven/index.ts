@@ -190,11 +190,14 @@ export function parseMavenMetadata(xml: string): MavenMetadata {
   const releaseVersions = versions.filter(v => !isSnapshotVersion(v))
   const sorted = [...releaseVersions].sort(versionCompare)
 
+  const latestTag = getTagValue(xml, 'latest')
+  const releaseTag = getTagValue(xml, 'release')
+
   return {
     groupId: getTagValue(xml, 'groupId'),
     artifactId: getTagValue(xml, 'artifactId'),
-    latest: sorted[sorted.length - 1],
-    release: sorted[sorted.length - 1],
+    latest: latestTag || sorted[sorted.length - 1],
+    release: releaseTag || sorted[sorted.length - 1],
     versions,
     lastUpdated: getTagValue(xml, 'lastUpdated'),
   }
