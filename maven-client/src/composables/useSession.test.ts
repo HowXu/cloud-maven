@@ -7,6 +7,7 @@ vi.mock("@/api/client", () => ({
     defaults: { headers: { common: {} } },
     delete: vi.fn(),
   },
+  setAuthorization: vi.fn(),
 }));
 
 vi.mock("mosha-vue-toastify", () => ({

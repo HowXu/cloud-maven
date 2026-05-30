@@ -267,7 +267,7 @@ export function hasPermission(
     if (permPath === '/' || normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)) {
       if (permPath.length > bestPath.length) {
         bestPath = permPath
-        matched = perm.actions.includes(action)
+        matched = perm.actions.includes(action as 'read' | 'write' | 'delete' | 'manage')
       }
     }
   }

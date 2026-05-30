@@ -4,7 +4,9 @@ import { md5Hex, sha1Hex } from '../../src/shared'
 
 const bytes = (value: string): ArrayBuffer => {
   const encoded = new TextEncoder().encode(value)
-  return encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength)
+  const result = new ArrayBuffer(encoded.byteLength)
+  new Uint8Array(result).set(encoded)
+  return result
 }
 
 describe('checksum helpers', () => {

@@ -33,7 +33,7 @@ export async function deleteObjectsByPrefix(bucket: R2Bucket, prefix: string): P
   while (truncated) {
     const result = await bucket.list({ prefix, cursor })
     truncated = result.truncated
-    cursor = result.cursor
+    cursor = result.truncated ? result.cursor : undefined
 
     const promises: Promise<void>[] = []
     for (const obj of result.objects) {
@@ -71,7 +71,7 @@ export async function summarizeObjects(
     const result = await bucket.list({ prefix, cursor, limit: 1000 })
     pages += 1
     truncated = result.truncated
-    cursor = result.cursor
+    cursor = result.truncated ? result.cursor : undefined
 
     for (const obj of result.objects) {
       objects += 1

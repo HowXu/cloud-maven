@@ -71,7 +71,7 @@ app.get('/index.html', serveStaticAsset)
 app.get('/assets/*', serveStaticAsset)
 
 app.get('/*', handleFileGet)
-app.head('/*', handleFileHead)
+app.on('HEAD', '/*', handleFileHead)
 app.put('/*', handleFilePut)
 app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)

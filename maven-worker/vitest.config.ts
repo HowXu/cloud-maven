@@ -1,10 +1,14 @@
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
 
 export default defineWorkersConfig({
-  wrangler: {
-    configPath: './wrangler.toml'
-  },
   test: {
-    globals: true
+    globals: true,
+    poolOptions: {
+      workers: {
+        miniflare: {
+          compatibilityFlags: ['export_commonjs_default']
+        }
+      }
+    }
   }
 })

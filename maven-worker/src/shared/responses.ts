@@ -10,7 +10,7 @@ export type ApiErrorBody = {
 }
 
 export const jsonData = <T>(c: Context<AppEnv>, data: T, status: StatusCode = 200): Response => {
-  return c.json(data, status)
+  return c.json(data, status as never)
 }
 
 export const jsonError = (c: Context<AppEnv>, error: AppError): Response => {
@@ -24,7 +24,7 @@ export const jsonError = (c: Context<AppEnv>, error: AppError): Response => {
     body.requestId = requestId
   }
 
-  return c.json(body, error.status)
+  return c.json(body, error.status as never)
 }
 
 export const noContent = (c: Context<AppEnv>): Response => {

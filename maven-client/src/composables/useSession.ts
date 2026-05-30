@@ -2,7 +2,7 @@ import { computed, ref } from "vue";
 import { createToast } from "mosha-vue-toastify";
 
 import { authApi } from "@/api/auth";
-import { setAuthorization } from "@/api/client";
+import { apiClient, setAuthorization } from "@/api/client";
 import type { SessionDetails } from "@/types";
 
 const tokenNameKey = "cloud-maven-token-name";

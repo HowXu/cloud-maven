@@ -112,6 +112,7 @@ adminRoutes.post('/tokens', authManager, async (c) => {
 
 adminRoutes.put('/tokens/:id', authManager, async (c) => {
   const id = c.req.param('id')
+  if (!id) throw badRequest('Token id is required')
   const body = await c.req.json<{
     name?: string
     description?: string
@@ -142,6 +143,7 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
 
 adminRoutes.delete('/tokens/:id', authManager, async (c) => {
   const id = c.req.param('id')
+  if (!id) throw badRequest('Token id is required')
   await deleteToken(c.env.MAVEN_KV, id)
   return noContent(c)
 })

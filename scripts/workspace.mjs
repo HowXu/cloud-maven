@@ -94,15 +94,16 @@ function runStep(step, forwardedArgs = []) {
 
   const projectDir = resolve(rootDir, project.path);
   const label = `${step.project}:${step.script}`;
-  const npmArgs = ["run", step.script];
+  const cmdParts = [npmCommand, "run", step.script];
 
   if (forwardedArgs.length > 0) {
-    npmArgs.push("--", ...forwardedArgs);
+    cmdParts.push("--", ...forwardedArgs);
   }
 
-  const child = spawn(npmCommand, npmArgs, {
+  const child = spawn(cmdParts.join(" "), [], {
     cwd: projectDir,
     env: process.env,
+    shell: true,
     stdio: ["inherit", "pipe", "pipe"]
   });
 
