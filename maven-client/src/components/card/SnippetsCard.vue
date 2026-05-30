@@ -14,6 +14,7 @@ import {
 
 const props = defineProps<{
   path: string;
+  repositoryId?: string;
 }>();
 
 type SnippetTab = "Maven" | "Gradle Kotlin" | "Gradle Groovy";
@@ -34,10 +35,10 @@ const metadataLoading = ref(false);
 const metadataNote = ref("");
 let metadataRequestId = 0;
 
-const repositoryId = computed(() => props.path.split("/").filter(Boolean)[0] || "");
+const repositoryId = computed(() => props.repositoryId || "");
 const repositoryUrl = computed(() => {
-  const url = createArtifactUrl(repositoryId.value);
-  return new URL(url, window.location.origin).toString();
+  const prefix = import.meta.env.VITE_API_BASE_URL || "";
+  return prefix ? new URL(prefix, window.location.origin).toString() : window.location.origin;
 });
 
 const effectiveVersion = computed(() => coordinates.value?.version || "VERSION");

@@ -580,6 +580,7 @@ async function details(c: Context<AppEnv>): Promise<Response> {
     parentPath,
     canRead: rootPerms.read,
     canWrite: rootPerms.write,
+    canDelete: rootPerms.delete,
     entries,
   })
 }

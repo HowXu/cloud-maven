@@ -55,5 +55,4 @@ export interface ClientSettings {
   allowOverwrite: boolean;
   generateChecksums: boolean;
   maintainMetadata: boolean;
-  introImage: string;
 }

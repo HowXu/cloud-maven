@@ -8,10 +8,15 @@ import FileList from "@/components/browser/FileList.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import LoadingState from "@/components/common/LoadingState.vue";
 import SnippetsCard from "@/components/card/SnippetsCard.vue";
+import NotFoundPage from "@/pages/NotFoundPage.vue";
 import { useRepository } from "@/composables/useRepository";
 
 const route = useRoute();
 const repository = useRepository();
+
+defineProps<{
+  repositoryId?: string;
+}>();
 
 const currentPath = computed(() => route.path.replace(/^\/+/, ""));
 
@@ -41,6 +46,7 @@ const canDelete = computed(() => repository.details.value?.canDelete === true);
 
         <div class="panel-surface rounded-lg">
           <LoadingState v-if="repository.loading.value" label="Loading Maven directory..." />
+          <NotFoundPage v-else-if="repository.error.value && currentPath" embedded />
           <ErrorState
             v-else-if="repository.error.value"
             :message="repository.error.value"
@@ -55,7 +61,7 @@ const canDelete = computed(() => repository.details.value?.canDelete === true);
         </div>
       </div>
 
-      <SnippetsCard :path="currentPath" />
+      <SnippetsCard :path="currentPath" :repository-id="repositoryId" />
     </div>
   </section>
 </template>

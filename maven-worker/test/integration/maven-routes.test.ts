@@ -73,6 +73,7 @@ describe('Worker Maven routes', () => {
       parentPath: string | null
       canRead: boolean
       canWrite: boolean
+      canDelete: boolean
       entries: Array<{
         name: string
         path: string
@@ -88,6 +89,7 @@ describe('Worker Maven routes', () => {
     expect(body.parentPath).toBe('releases/com/example')
     expect(body.canRead).toBe(true)
     expect(body.canWrite).toBe(false)
+    expect(body.canDelete).toBe(false)
     expect(body.entries).toEqual([
       expect.objectContaining({
         name: '1.0.0',

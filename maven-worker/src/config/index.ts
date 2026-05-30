@@ -12,7 +12,7 @@ const DEFAULT_POLICY: RepositoryPolicy = {
 const DEFAULT_SETTINGS: ClientSettings = {
   title: 'Cloud-Maven',
   baseUrl: '',
-  defaultRepository: '',
+  defaultRepository: 'Cloud Maven',
   anonymousRead: true,
   allowOverwrite: false,
   generateChecksums: false,

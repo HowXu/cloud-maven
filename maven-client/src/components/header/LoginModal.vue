@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyRound, X } from "lucide-vue-next";
+import { X } from "lucide-vue-next";
 import { ref } from "vue";
 import { VueFinalModal } from "vue-final-modal";
 import { createToast } from "mosha-vue-toastify";
@@ -38,7 +38,6 @@ const submit = async () => {
 <template>
   <div>
     <button class="soft-button" type="button" @click="show = true">
-      <KeyRound class="h-4 w-4" />
       Sign in
     </button>
 
@@ -64,7 +63,6 @@ const submit = async () => {
             <input v-model="secret" class="field-control mt-1" type="password" autocomplete="current-password" required />
           </label>
           <button class="soft-button mt-2 w-full" type="submit" :disabled="submitting">
-            <KeyRound class="h-4 w-4" />
             {{ submitting ? "Signing in..." : "Sign in" }}
           </button>
         </form>

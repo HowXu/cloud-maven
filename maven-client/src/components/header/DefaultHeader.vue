@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { AlignJustify, LogOut, Moon, Sun, X } from "lucide-vue-next";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
 import LoginModal from "@/components/header/LoginModal.vue";
+import { settingsApi } from "@/api/settings";
 import { useSession } from "@/composables/useSession";
 import { useTheme } from "@/composables/useTheme";
 
@@ -13,13 +14,23 @@ defineEmits<{
 const { isDark, toggleTheme } = useTheme();
 const { details, isLogged, logout } = useSession();
 const menuOpen = ref(false);
+const siteTitle = ref("Cloud Maven");
+
+onMounted(async () => {
+  try {
+    const response = await settingsApi.get();
+    siteTitle.value = response.data.title || "Cloud Maven";
+  } catch {
+    // keep default
+  }
+});
 </script>
 
 <template>
   <header class="bg-cloud-wash dark:bg-black">
     <div class="content-container flex items-start justify-between gap-4 py-8 sm:items-center">
       <button class="text-left" type="button" @click="$emit('select-home')">
-        <span class="block text-xl font-semibold">Cloud-Maven</span>
+        <span class="block text-xl font-semibold">{{ siteTitle }}</span>
       </button>
 
       <div class="flex items-center gap-2">

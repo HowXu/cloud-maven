@@ -35,6 +35,8 @@
 - 移除 refresh 和 upload 功能（游客只有读取权限）
 - 管理员目录删除功能（已有 DeleteArtifactModal 支持目录删除）
 - 介绍卡片图片支持（Settings 新增 `introImage` 字段，IndexPage 从 settings API 加载图片 URL）
+- 介绍卡片改为静态编译配置（`intro.config.ts`，图片圆角、支持附加行）
+- 修复登录弹窗暗色模式不同步（dark class 挂到 documentElement）
 
 ## 目录结构
 
@@ -42,6 +44,7 @@
 maven-client/src/
 ├── main.ts / App.vue
 ├── types.ts
+├── intro.config.ts  # 静态介绍卡片配置（imageUrl、title、description、lines）
 ├── api/          # client.ts(axios实例), auth.ts, maven.ts, admin.ts, settings.ts
 ├── composables/  # useSession, useRepository, useMavenMetadata, useTheme, useClipboardToast
 ├── router/       # index.ts (hash history)

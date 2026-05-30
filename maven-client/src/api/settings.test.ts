@@ -12,14 +12,13 @@ vi.mock("@/api/client", () => ({
 }));
 
 const defaultSettings: ClientSettings = {
-  title: "Cloud-Maven",
+  title: "Cloud Maven",
   baseUrl: "https://repo.example.com",
   defaultRepository: "",
   anonymousRead: true,
   allowOverwrite: false,
   generateChecksums: false,
   maintainMetadata: false,
-  introImage: "",
 };
 
 describe("settingsApi", () => {
@@ -55,7 +54,6 @@ describe("settingsApi", () => {
         allowOverwrite: true,
         generateChecksums: true,
         maintainMetadata: true,
-        introImage: "https://example.com/image.png",
       };
 
       settingsApi.update(settings);
@@ -74,23 +72,13 @@ describe("settingsApi", () => {
       expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", settings);
     });
 
-    it("can update introImage", () => {
-      const settings: ClientSettings = { ...defaultSettings, introImage: "https://example.com/intro.png" };
-      settingsApi.update(settings);
-      expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", expect.objectContaining({ introImage: "https://example.com/intro.png" }));
-    });
   });
 
   describe("ClientSettings type", () => {
     it("has correct structure with all fields", () => {
-      expect(defaultSettings.title).toBe("Cloud-Maven");
+      expect(defaultSettings.title).toBe("Cloud Maven");
       expect(defaultSettings.anonymousRead).toBe(true);
       expect(defaultSettings.allowOverwrite).toBe(false);
-    });
-
-    it("has introImage field", () => {
-      const settings: ClientSettings = { ...defaultSettings, introImage: "https://example.com/image.png" };
-      expect(settings.introImage).toBe("https://example.com/image.png");
     });
 
     it("allows partial initialization", () => {
@@ -102,11 +90,9 @@ describe("settingsApi", () => {
         allowOverwrite: false,
         generateChecksums: false,
         maintainMetadata: false,
-        introImage: "",
       };
       expect(minimal.title).toBe("Minimal");
       expect(minimal.maintainMetadata).toBe(false);
-      expect(minimal.introImage).toBe("");
     });
 
     it("defaultRepository is empty string (no release/snapshot distinction)", () => {

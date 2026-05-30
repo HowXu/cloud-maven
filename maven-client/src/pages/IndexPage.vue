@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, onMounted } from "vue";
+import { computed, onMounted, ref, watchEffect } from "vue";
 
 import AdminPage from "@/pages/AdminPage.vue";
 import SettingsPage from "@/pages/SettingsPage.vue";
@@ -7,12 +7,14 @@ import FileBrowserView from "@/components/browser/FileBrowserView.vue";
 import DefaultHeader from "@/components/header/DefaultHeader.vue";
 import IntroCard from "@/components/common/IntroCard.vue";
 import { settingsApi } from "@/api/settings";
+import { introConfig } from "@/intro.config";
 import { useSession } from "@/composables/useSession";
 
 type TabName = "Directory" | "Admin" | "Settings";
 
 const selectedTab = ref<TabName>((localStorage.getItem("cloud-maven-tab") as TabName) || "Directory");
 const { isManager, isLogged } = useSession();
+const defaultRepo = ref("");
 
 const visibleTabs = computed<TabName[]>(() => {
   const tabs: TabName[] = ["Directory"];
@@ -21,7 +23,10 @@ const visibleTabs = computed<TabName[]>(() => {
     tabs.push("Admin");
   }
 
-  tabs.push("Settings");
+  if (isLogged.value) {
+    tabs.push("Settings");
+  }
+
   return tabs;
 });
 
@@ -33,16 +38,12 @@ watchEffect(() => {
   }
 });
 
-const introData = ref({
-  imageUrl: "",
-  title: "",
-  description: "",
-});
+const introData = ref(introConfig);
 
 onMounted(async () => {
   try {
     const response = await settingsApi.get();
-    introData.value.imageUrl = response.data.introImage || "";
+    defaultRepo.value = response.data.defaultRepository || "";
   } catch {
     // ignore
   }
@@ -58,7 +59,7 @@ onMounted(async () => {
         v-if="selectedTab === 'Directory'"
         :image-url="introData.imageUrl"
         :title="introData.title"
-        :description="introData.description"
+        :lines="introData.lines"
       />
 
       <nav class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto" aria-label="Main sections">
@@ -76,7 +77,7 @@ onMounted(async () => {
     </div>
 
     <transition name="slide-fade" mode="out-in">
-      <FileBrowserView v-if="selectedTab === 'Directory'" key="directory" />
+      <FileBrowserView v-if="selectedTab === 'Directory'" key="directory" :repository-id="defaultRepo" />
       <AdminPage v-else-if="selectedTab === 'Admin'" key="admin" />
       <SettingsPage v-else key="settings" />
     </transition>

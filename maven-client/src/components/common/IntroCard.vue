@@ -2,7 +2,7 @@
 defineProps<{
   imageUrl?: string;
   title?: string;
-  description?: string;
+  lines?: string[];
 }>();
 </script>
 
@@ -11,9 +11,9 @@ defineProps<{
     <div v-if="imageUrl" class="intro-image">
       <img :src="imageUrl" :alt="title || 'Repository introduction'" />
     </div>
-    <div v-if="title || description" class="intro-text">
+    <div v-if="title || (lines && lines.length)" class="intro-text">
       <h3 v-if="title" class="intro-title">{{ title }}</h3>
-      <p v-if="description" class="intro-description">{{ description }}</p>
+      <p v-for="line in lines" :key="line" class="intro-line">{{ line }}</p>
     </div>
   </div>
 </template>
@@ -42,7 +42,7 @@ defineProps<{
   flex-shrink: 0;
   width: 8rem;
   height: 8rem;
-  border-radius: 0.375rem;
+  border-radius: 50%;
   overflow: hidden;
   background: rgb(229 231 235);
 }
@@ -76,14 +76,14 @@ defineProps<{
   color: rgb(249 250 251);
 }
 
-.intro-description {
+.intro-line {
+  margin: 0;
   font-size: 0.9rem;
   color: rgb(75 85 99);
-  margin: 0;
   line-height: 1.5;
 }
 
-.dark .intro-description {
+.dark .intro-line {
   color: rgb(156 163 175);
 }
 </style>

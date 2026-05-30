@@ -112,3 +112,19 @@ maven-worker/test/
 - 需要前端配合时在 `./Client.md` 需求交接记录章节写入，不直接改前端代码
 - 后端只能操作 `maven-worker/` 目录
 - 不创建 `releases`/`snapshots` 默认仓库
+
+## 需求交接记录
+
+### 2026-05-30 - 前端 -> 后端
+
+状态：待处理
+来源：agents/Client.md | intro.config.ts 静态化
+需求：
+- `introImage` 字段不再需要，请从 `/api/admin/settings` 接口及 KV 中移除 `intro_image` key 相关逻辑
+- ClientSettings 已移除 `introImage` 字段，前端不再通过 settings API 获取介绍图片
+- 介绍卡片相关数据改由前端静态配置文件 `intro.config.ts` 提供
+
+验收：
+- `/api/admin/settings` GET/PUT 接口不再包含 `introImage` 字段
+- KV 中不再读写 `intro_image` key
+- 前端 SettingsPage 不再展示 introImage 字段

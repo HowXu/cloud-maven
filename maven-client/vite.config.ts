@@ -13,6 +13,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    historyApiFallback: {
+      rewrites: [
+        { from: /^(?!\/api($|\/)).*$/, to: "/index.html" },
+      ],
+    },
   },
   build: {
     emptyOutDir: true,

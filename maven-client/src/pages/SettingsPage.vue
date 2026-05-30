@@ -13,14 +13,13 @@ const saving = ref(false);
 const error = ref<string | null>(null);
 
 const form = reactive<ClientSettings>({
-  title: "Cloud-Maven",
+  title: "Cloud Maven",
   baseUrl: "",
   defaultRepository: "",
   anonymousRead: true,
   allowOverwrite: false,
   generateChecksums: true,
   maintainMetadata: true,
-  introImage: "",
 });
 
 const loadSettings = async () => {
@@ -89,10 +88,6 @@ watch(isManager, loadSettings);
         <label class="block">
           <span class="muted-label">Default repository</span>
           <input v-model="form.defaultRepository" class="field-control mt-1" type="text" />
-        </label>
-        <label class="block">
-          <span class="muted-label">Intro image URL</span>
-          <input v-model="form.introImage" class="field-control mt-1" type="url" placeholder="https://..." />
         </label>
       </div>
 
