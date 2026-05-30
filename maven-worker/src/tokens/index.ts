@@ -262,7 +262,10 @@ export function hasPermission(
   const matchedPath = permissions
     .filter(p => {
       const permPath = p.path.endsWith('/') ? p.path.slice(0, -1) : p.path
-      return permPath === '/' || normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)
+      if (permPath === '' || permPath === '/') {
+        return normalizedPath === '/' || normalizedPath.startsWith('/')
+      }
+      return normalizedPath === permPath || normalizedPath.startsWith(`${permPath}/`)
     })
     .sort((a, b) => {
       const aPath = a.path.endsWith('/') ? a.path.slice(0, -1) : a.path

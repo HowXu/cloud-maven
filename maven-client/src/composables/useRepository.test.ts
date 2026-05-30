@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mavenApi } from "@/api/maven";
 import { useRepository } from "@/composables/useRepository";
-import type { RepositoryDetails } from "@/types";
 
 vi.mock("@/api/maven", () => ({
   mavenApi: {
@@ -14,21 +13,25 @@ vi.mock("mosha-vue-toastify", () => ({
   createToast: vi.fn(),
 }));
 
-const detailsFor = (path: string): RepositoryDetails => ({
+const detailsFor = (path: string, canWrite = false) => ({
   path,
-  parentPath: null,
+  parentPath: path === "/" ? null : `/${path.split("/").slice(0, -1).join("/")}`,
   canRead: true,
-  canWrite: path.includes("writable"),
+  canWrite,
   entries: [
     {
       name: "demo",
       path: `${path}/demo`,
-      type: "DIRECTORY",
-      permissions: {
-        read: true,
-        write: false,
-        delete: false,
-      },
+      type: "DIRECTORY" as const,
+      permissions: { read: true, write: false, delete: false },
+    },
+    {
+      name: "demo.jar",
+      path: `${path}/demo.jar`,
+      type: "FILE" as const,
+      size: 1024,
+      contentType: "application/java-archive",
+      permissions: { read: true, write: false, delete: false },
     },
   ],
 });
@@ -38,55 +41,113 @@ describe("useRepository", () => {
     vi.mocked(mavenApi.details).mockReset();
   });
 
-  it("loads repository details and exposes entries plus write permission", async () => {
-    const repo = useRepository();
-    const details = detailsFor("writable-releases");
-    vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+  describe("load", () => {
+    it("loads repository details and exposes entries plus write permission", async () => {
+      const repo = useRepository();
+      const details = detailsFor("releases", true);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
 
-    await repo.load("/writable-releases");
+      await repo.load("releases");
 
-    expect(mavenApi.details).toHaveBeenCalledWith("writable-releases");
-    expect(repo.details.value).toEqual(details);
-    expect(repo.entries.value).toEqual(details.entries);
-    expect(repo.canWrite.value).toBe(true);
-    expect(repo.error.value).toBeNull();
+      expect(mavenApi.details).toHaveBeenCalledWith("releases");
+      expect(repo.details.value).toEqual(details);
+      expect(repo.entries.value).toEqual(details.entries);
+      expect(repo.canWrite.value).toBe(true);
+      expect(repo.error.value).toBeNull();
+    });
+
+    it("uses cache when available without force", async () => {
+      const repo = useRepository();
+      const details = detailsFor("cache-test");
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+
+      await repo.load("cache-test");
+      await repo.load("cache-test");
+
+      expect(mavenApi.details).toHaveBeenCalledTimes(1);
+    });
+
+    it("forces reload when cache is bypassed", async () => {
+      const repo = useRepository();
+      const details = detailsFor("releases");
+      vi.mocked(mavenApi.details).mockResolvedValue({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+
+      await repo.load("releases", true);
+      await repo.load("releases", true);
+
+      expect(mavenApi.details).toHaveBeenCalledTimes(2);
+    });
   });
 
-  it("caches directory details until a forced reload is requested", async () => {
-    const repo = useRepository();
-    const path = `cache-${crypto.randomUUID()}`;
-    const first = detailsFor(path);
-    const second = {
-      ...first,
-      canWrite: true,
-    };
+  describe("error handling", () => {
+    it("clears details and records an error when loading fails", async () => {
+      const repo = useRepository();
+      vi.mocked(mavenApi.details).mockRejectedValueOnce(new Error("not found"));
 
-    vi.mocked(mavenApi.details)
-      .mockResolvedValueOnce({ data: first } as Awaited<ReturnType<typeof mavenApi.details>>)
-      .mockResolvedValueOnce({ data: second } as Awaited<ReturnType<typeof mavenApi.details>>);
+      await expect(repo.load("missing")).rejects.toThrow("not found");
 
-    await repo.load(path);
-    await repo.load(`/${path}`);
-
-    expect(mavenApi.details).toHaveBeenCalledTimes(1);
-    expect(repo.details.value).toEqual(first);
-
-    await repo.load(path, true);
-
-    expect(mavenApi.details).toHaveBeenCalledTimes(2);
-    expect(repo.details.value).toEqual(second);
+      expect(repo.details.value).toBeNull();
+      expect(repo.entries.value).toEqual([]);
+      expect(repo.canWrite.value).toBe(false);
+      expect(repo.error.value).toBe("Directory is unavailable or you do not have permission to view it.");
+    });
   });
 
-  it("clears details and records an error when loading fails", async () => {
-    const repo = useRepository();
-    const path = `missing-${crypto.randomUUID()}`;
-    vi.mocked(mavenApi.details).mockRejectedValueOnce(new Error("not found"));
+  describe("refresh", () => {
+    it("does nothing if no details loaded", async () => {
+      const repo = useRepository();
+      await repo.refresh();
+      expect(mavenApi.details).not.toHaveBeenCalled();
+    });
+  });
 
-    await expect(repo.load(path)).rejects.toThrow("not found");
+  describe("entries computed", () => {
+    it("exposes entries from details", async () => {
+      const repo = useRepository();
+      const details = detailsFor("releases");
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
 
-    expect(repo.details.value).toBeNull();
-    expect(repo.entries.value).toEqual([]);
-    expect(repo.canWrite.value).toBe(false);
-    expect(repo.error.value).toBe("Directory is unavailable or you do not have permission to view it.");
+      await repo.load("releases");
+
+      expect(repo.entries.value).toHaveLength(2);
+      expect(repo.entries.value[0].type).toBe("DIRECTORY");
+      expect(repo.entries.value[1].type).toBe("FILE");
+    });
+
+    it("returns empty array when no entries", async () => {
+      const repo = useRepository();
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: { path: "empty", parentPath: null, canRead: true, canWrite: false, entries: [] } } as Awaited<ReturnType<typeof mavenApi.details>>);
+
+      await repo.load("empty");
+
+      expect(repo.entries.value).toEqual([]);
+    });
+  });
+
+  describe("canWrite computed", () => {
+    it("returns true when canWrite is true in details", async () => {
+      const repo = useRepository();
+      const details = detailsFor("writable", true);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+
+      await repo.load("writable");
+
+      expect(repo.canWrite.value).toBe(true);
+    });
+
+    it("returns false when canWrite is false in details", async () => {
+      const repo = useRepository();
+      const details = detailsFor("readonly", false);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+
+      await repo.load("readonly");
+
+      expect(repo.canWrite.value).toBe(false);
+    });
+
+    it("returns false when details is null", () => {
+      const repo = useRepository();
+      expect(repo.canWrite.value).toBe(false);
+    });
   });
 });

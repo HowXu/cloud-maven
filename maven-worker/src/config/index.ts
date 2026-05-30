@@ -6,8 +6,7 @@ const KV_KEY_SETTINGS = 'config:settings'
 
 const DEFAULT_POLICY: RepositoryPolicy = {
   visibility: 'PUBLIC',
-  allowReleaseRedeploy: false,
-  allowSnapshotRedeploy: true,
+  allowOverwrite: false,
 }
 
 const DEFAULT_SETTINGS: ClientSettings = {
@@ -73,7 +72,7 @@ export async function updateSettings(
     policyPatch.visibility = patch.anonymousRead ? 'PUBLIC' : 'PRIVATE'
   }
   if (patch.allowOverwrite !== undefined) {
-    policyPatch.allowReleaseRedeploy = patch.allowOverwrite
+    policyPatch.allowOverwrite = patch.allowOverwrite
   }
 
   if (kv) {

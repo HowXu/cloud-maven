@@ -6,8 +6,7 @@ import type { AccessPermission, RepositoryPolicy } from '../../src/env'
 
 const PUBLIC_POLICY: RepositoryPolicy = {
   visibility: 'PUBLIC',
-  allowReleaseRedeploy: false,
-  allowSnapshotRedeploy: true,
+  allowOverwrite: false,
 }
 
 const PRIVATE_POLICY: RepositoryPolicy = {
@@ -288,7 +287,6 @@ describe('Worker Maven routes', () => {
         <artifactId>demo</artifactId>
         <versioning>
           <latest>1.1.0</latest>
-          <release>1.0.0</release>
           <versions>
             <version>0.9.0</version>
             <version>1.0.0</version>
@@ -305,7 +303,6 @@ describe('Worker Maven routes', () => {
       groupId: string
       artifactId: string
       latest: string
-      release: string
       versions: string[]
       lastUpdated: string
     }
@@ -317,7 +314,6 @@ describe('Worker Maven routes', () => {
       groupId: 'com.example',
       artifactId: 'demo',
       latest: '1.1.0',
-      release: '1.0.0',
       versions: ['0.9.0', '1.0.0'],
       lastUpdated: '20260529010101',
     })

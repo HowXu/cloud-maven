@@ -1,39 +1,66 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from "vue";
+import { computed, ref, watchEffect, onMounted } from "vue";
 
 import AdminPage from "@/pages/AdminPage.vue";
 import SettingsPage from "@/pages/SettingsPage.vue";
 import FileBrowserView from "@/components/browser/FileBrowserView.vue";
 import DefaultHeader from "@/components/header/DefaultHeader.vue";
+import IntroCard from "@/components/common/IntroCard.vue";
+import { settingsApi } from "@/api/settings";
 import { useSession } from "@/composables/useSession";
 
-type TabName = "Overview" | "Admin" | "Settings";
+type TabName = "Directory" | "Admin" | "Settings";
 
-const selectedTab = ref<TabName>((localStorage.getItem("cloud-maven-tab") as TabName) || "Overview");
-const { isManager } = useSession();
+const selectedTab = ref<TabName>((localStorage.getItem("cloud-maven-tab") as TabName) || "Directory");
+const { isManager, isLogged } = useSession();
 
 const visibleTabs = computed<TabName[]>(() => {
-  if (isManager.value) {
-    return ["Overview", "Admin", "Settings"];
+  const tabs: TabName[] = ["Directory"];
+
+  if (isLogged.value && isManager.value) {
+    tabs.push("Admin");
   }
 
-  return ["Overview", "Admin"];
+  tabs.push("Settings");
+  return tabs;
 });
 
 watchEffect(() => {
   localStorage.setItem("cloud-maven-tab", selectedTab.value);
 
   if (!visibleTabs.value.includes(selectedTab.value)) {
-    selectedTab.value = "Overview";
+    selectedTab.value = "Directory";
+  }
+});
+
+const introData = ref({
+  imageUrl: "",
+  title: "",
+  description: "",
+});
+
+onMounted(async () => {
+  try {
+    const response = await settingsApi.get();
+    introData.value.imageUrl = response.data.introImage || "";
+  } catch {
+    // ignore
   }
 });
 </script>
 
 <template>
-  <DefaultHeader @select-home="selectedTab = 'Overview'" />
+  <DefaultHeader @select-home="selectedTab = 'Directory'" />
 
   <main class="bg-cloud-wash dark:bg-black">
     <div class="content-container">
+      <IntroCard
+        v-if="selectedTab === 'Directory'"
+        :image-url="introData.imageUrl"
+        :title="introData.title"
+        :description="introData.description"
+      />
+
       <nav class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto" aria-label="Main sections">
         <button
           v-for="tab in visibleTabs"
@@ -49,7 +76,7 @@ watchEffect(() => {
     </div>
 
     <transition name="slide-fade" mode="out-in">
-      <FileBrowserView v-if="selectedTab === 'Overview'" key="overview" />
+      <FileBrowserView v-if="selectedTab === 'Directory'" key="directory" />
       <AdminPage v-else-if="selectedTab === 'Admin'" key="admin" />
       <SettingsPage v-else key="settings" />
     </transition>
@@ -62,7 +89,7 @@ watchEffect(() => {
   padding: 0.65rem 0.75rem;
   border-bottom: 2px solid transparent;
   color: rgb(75 85 99);
-  text-align: left;
+  text-align: center;
   transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 

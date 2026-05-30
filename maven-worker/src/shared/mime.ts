@@ -22,21 +22,6 @@ export function getContentType(path: string): string {
   return MIME_TABLE[path.slice(lastDot).toLowerCase()] ?? 'application/octet-stream'
 }
 
-export function isSnapshotArtifact(path: string): boolean {
-  const parts = path.split('/')
-  for (const part of parts) {
-    if (/SNAPSHOT/i.test(part)) return true
-  }
-  return false
-}
-
-export function getCacheControl(path: string): string {
-  const filename = path.split('/').pop() ?? ''
-  if (filename === 'maven-metadata.xml') return 'no-cache'
-  if (isSnapshotArtifact(path)) return 'no-cache'
-  return 'public, max-age=31536000, immutable'
-}
-
 export function isChecksumFile(path: string): boolean {
   const name = path.split('/').pop() ?? ''
   return /\.(sha1|md5|sha256|sha512)$/i.test(name)
@@ -45,4 +30,10 @@ export function isChecksumFile(path: string): boolean {
 export function isMetadataFile(path: string): boolean {
   const name = path.split('/').pop() ?? ''
   return name === 'maven-metadata.xml'
+}
+
+export function getCacheControl(path: string): string {
+  const name = path.split('/').pop() ?? ''
+  if (name === 'maven-metadata.xml') return 'no-cache'
+  return 'public, max-age=31536000, immutable'
 }

@@ -3,6 +3,7 @@ import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
 export default defineWorkersConfig({
   test: {
     globals: true,
+    cache: false,
     poolOptions: {
       workers: {
         main: './src/index.ts',
@@ -10,6 +11,7 @@ export default defineWorkersConfig({
           compatibilityFlags: ['export_commonjs_default'],
           kvNamespaces: { MAVEN_KV: 'cloud-maven' },
           r2Buckets: { MAVEN_BUCKET: 'cloud-maven' },
+          cacheEnabled: false,
         }
       }
     }

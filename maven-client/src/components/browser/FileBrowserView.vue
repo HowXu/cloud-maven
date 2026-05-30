@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { RefreshCw } from "lucide-vue-next";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import BreadcrumbNavigation from "@/components/browser/BreadcrumbNavigation.vue";
 import FileList from "@/components/browser/FileList.vue";
-import UploadArtifactModal from "@/components/browser/UploadArtifactModal.vue";
+import DeleteEntryModal from "@/components/browser/DeleteEntryModal.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import LoadingState from "@/components/common/LoadingState.vue";
 import SnippetsCard from "@/components/card/SnippetsCard.vue";
@@ -29,18 +28,12 @@ watch(
   <section class="content-container py-8">
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div>
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <BreadcrumbNavigation :path="currentPath" />
-          <div class="flex gap-2">
-            <button class="icon-button" type="button" title="Refresh" @click="repository.load(currentPath, true)">
-              <RefreshCw class="h-4 w-4" />
-            </button>
-            <UploadArtifactModal
-              :path="currentPath"
-              :disabled="!repository.canWrite.value"
-              @uploaded="repository.load(currentPath, true)"
-            />
-          </div>
+        <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
+          <DeleteEntryModal
+            v-if="repository.canDelete.value"
+            :path="currentPath"
+            @deleted="repository.load(currentPath, true)"
+          />
         </div>
 
         <div class="panel-surface rounded-lg">

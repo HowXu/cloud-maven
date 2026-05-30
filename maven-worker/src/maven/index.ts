@@ -20,7 +20,6 @@ type MavenMetadata = {
   groupId?: string
   artifactId?: string
   latest?: string
-  release?: string
   versions: string[]
   lastUpdated?: string
 }
@@ -91,22 +90,14 @@ async function ensureDeleteAccess(c: Context<AppEnv>, path: string): Promise<Tok
   return token
 }
 
-function isSnapshotPath(path: string): boolean {
-  return /SNAPSHOT/i.test(path)
-}
-
 async function ensureRedeployAllowed(c: Context<AppEnv>, path: string): Promise<void> {
   if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) return
   const policy = await getRepositoryPolicy(c.env.MAVEN_KV)
   const existing = await headObject(c.env.MAVEN_BUCKET, path)
   if (!existing) return
 
-  if (!isSnapshotPath(path) && !policy.allowReleaseRedeploy) {
-    throw conflict('Release artifact already exists and redeploy is disabled')
-  }
-
-  if (isSnapshotPath(path) && !policy.allowSnapshotRedeploy) {
-    throw conflict('Snapshot artifact already exists and redeploy is disabled')
+  if (!policy.allowOverwrite) {
+    throw conflict('Artifact already exists and overwrite is disabled')
   }
 }
 
@@ -180,13 +171,9 @@ function getTagValues(xml: string, tagName: string): string[] {
     .filter((value): value is string => Boolean(value))
 }
 
-function isSnapshotVersion(v: string): boolean {
-  return /-SNAPSHOT$/i.test(v)
-}
-
 function versionCompare(a: string, b: string): number {
-  const cleanA = a.replace(/-SNAPSHOT$/i, '').split(/[._-]/).map(p => Number(p) || 0)
-  const cleanB = b.replace(/-SNAPSHOT$/i, '').split(/[._-]/).map(p => Number(p) || 0)
+  const cleanA = a.split(/[._-]/).map(p => Number(p) || 0)
+  const cleanB = b.split(/[._-]/).map(p => Number(p) || 0)
   const maxLen = Math.max(cleanA.length, cleanB.length)
   for (let i = 0; i < maxLen; i++) {
     const nA = cleanA[i] ?? 0
@@ -198,17 +185,14 @@ function versionCompare(a: string, b: string): number {
 
 export function parseMavenMetadata(xml: string): MavenMetadata {
   const versions = getTagValues(xml, 'version')
-  const releaseVersions = versions.filter(v => !isSnapshotVersion(v))
-  const sorted = [...releaseVersions].sort(versionCompare)
+  const sorted = [...versions].sort(versionCompare)
 
   const latestTag = getTagValue(xml, 'latest')
-  const releaseTag = getTagValue(xml, 'release')
 
   return {
     groupId: getTagValue(xml, 'groupId'),
     artifactId: getTagValue(xml, 'artifactId'),
     latest: latestTag || sorted[sorted.length - 1],
-    release: releaseTag || sorted[sorted.length - 1],
     versions,
     lastUpdated: getTagValue(xml, 'lastUpdated'),
   }
@@ -238,7 +222,48 @@ async function deleteMavenPrefix(c: Context<AppEnv>, path: string): Promise<numb
     throw notFound()
   }
 
-  return deleteObjectsByPrefix(c.env.MAVEN_BUCKET, prefix)
+  const deletedCount = await deleteObjectsByPrefix(c.env.MAVEN_BUCKET, prefix)
+  await updateMetadataAfterDelete(c, prefix, path)
+  return deletedCount
+}
+
+async function updateMetadataAfterDelete(c: Context<AppEnv>, prefix: string, deletedPath: string): Promise<void> {
+  if (!c.env.MAVEN_BUCKET) return
+
+  const parts = prefix.split('/').filter(Boolean)
+  if (parts.length < 2) return
+
+  const metadataKey = `${parts.slice(0, -1).join('/')}/maven-metadata.xml`
+  const metadataObj = await getObject(c.env.MAVEN_BUCKET, metadataKey)
+  if (!metadataObj) return
+
+  const xml = await metadataObj.text()
+  const meta = parseMavenMetadata(xml)
+  if (meta.versions.length === 0) return
+
+  const versionSegment = parts[parts.length - 1]
+  const newVersions = meta.versions.filter(v => v !== versionSegment)
+  if (newVersions.length === meta.versions.length) return
+
+  const sorted = [...newVersions].sort(versionCompare)
+  const newLatest = sorted[sorted.length - 1]
+  const newLastUpdated = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+
+  const newXml = `<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>${xmlEscape(meta.groupId || '')}</groupId>
+  <artifactId>${xmlEscape(meta.artifactId || '')}</artifactId>
+  <version>${xmlEscape(meta.latest || '')}</version>
+  <versions>
+${newVersions.map(v => `    <version>${xmlEscape(v)}</version>`).join('\n')}
+  </versions>
+  <lastUpdated>${newLastUpdated}</lastUpdated>
+</metadata>
+`
+
+  await putObject(c.env.MAVEN_BUCKET, metadataKey, newXml, {
+    httpMetadata: { contentType: 'application/xml; charset=utf-8' },
+  })
 }
 
 export async function handleFileGet(c: Context<AppEnv>): Promise<Response> {

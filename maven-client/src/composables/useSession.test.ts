@@ -22,57 +22,122 @@ const managerSession: SessionDetails = {
 
 describe("useSession", () => {
   beforeEach(() => {
-    const store: Record<string, string> = {}
+    const store: Record<string, string> = {};
     vi.stubGlobal("localStorage", {
       getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => { store[key] = value },
-      removeItem: (key: string) => { delete store[key] },
-      clear: () => { Object.keys(store).forEach(k => delete store[k]) },
-    })
-    vi.restoreAllMocks()
-  })
+      setItem: (key: string, value: string) => { store[key] = value; },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => { Object.keys(store).forEach((k) => delete store[k]); },
+    });
+    vi.restoreAllMocks();
+  });
 
-  it("returns logged-in state when session details are present", async () => {
-    const { useSession } = await import("@/composables/useSession")
-    const session = useSession()
-    session.details.value = managerSession
+  describe("initial state", () => {
+    it("returns not logged in when session details are null", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = null;
 
-    expect(session.isLogged.value).toBe(true)
-    expect(session.isManager.value).toBe(true)
-  })
+      expect(session.isLogged.value).toBe(false);
+      expect(session.isManager.value).toBe(false);
+    });
 
-  it("returns not logged in when session details are null", async () => {
-    const { useSession } = await import("@/composables/useSession")
-    const session = useSession()
-    session.details.value = null
+    it("returns not logged in when token name is empty", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = null;
 
-    expect(session.isLogged.value).toBe(false)
-    expect(session.isManager.value).toBe(false)
-  })
+      expect(session.isLogged.value).toBe(false);
+    });
+  });
 
-  it("checks permission path prefix for read/write/delete actions", async () => {
-    const { useSession } = await import("@/composables/useSession")
-    const session = useSession()
-    session.details.value = {
-      token: { id: "token-1", name: "publisher" },
-      roles: [],
-      permissions: [{ path: "/releases", actions: ["read", "write"] }],
-    }
+  describe("isLogged and isManager", () => {
+    it("returns logged-in state when session details are present", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = managerSession;
 
-    expect(session.can("/releases/com/example", "read")).toBe(true)
-    expect(session.can("/releases/com/example", "write")).toBe(true)
-    expect(session.can("/releases/com/example", "delete")).toBe(false)
-    expect(session.can("/snapshots", "read")).toBe(false)
-  })
+      expect(session.isLogged.value).toBe(true);
+      expect(session.isManager.value).toBe(true);
+    });
 
-  it("manager role always returns true for any path action", async () => {
-    const { useSession } = await import("@/composables/useSession")
-    const session = useSession()
-    session.details.value = managerSession
+    it("returns not manager when roles array is empty", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "user" },
+        roles: [],
+        permissions: [],
+      };
 
-    expect(session.can("/any/path", "read")).toBe(true)
-    expect(session.can("/any/path", "write")).toBe(true)
-    expect(session.can("/any/path", "delete")).toBe(true)
-    expect(session.can("/any/path", "manage")).toBe(true)
-  })
-})
+      expect(session.isLogged.value).toBe(true);
+      expect(session.isManager.value).toBe(false);
+    });
+
+    it("returns not manager when roles does not include manager", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "user" },
+        roles: ["reader"],
+        permissions: [{ path: "/", actions: ["read"] }],
+      };
+
+      expect(session.isManager.value).toBe(false);
+    });
+  });
+
+  describe("permission checking", () => {
+    it("manager role always returns true for any path and action", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = managerSession;
+
+      expect(session.can("/any/path", "read")).toBe(true);
+      expect(session.can("/any/path", "write")).toBe(true);
+      expect(session.can("/any/path", "delete")).toBe(true);
+      expect(session.can("/any/path", "manage")).toBe(true);
+      expect(session.can("/", "read")).toBe(true);
+    });
+
+    it("checks permission path prefix for read action", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "publisher" },
+        roles: [],
+        permissions: [{ path: "/com/example", actions: ["read", "write"] }],
+      };
+
+      expect(session.can("/com/example/demo", "read")).toBe(true);
+      expect(session.can("/com/example/demo", "write")).toBe(true);
+      expect(session.can("/other/path", "read")).toBe(false);
+    });
+
+    it("checks permission path prefix for delete action", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "publisher" },
+        roles: [],
+        permissions: [{ path: "/com/example", actions: ["read", "delete"] }],
+      };
+
+      expect(session.can("/com/example/demo", "delete")).toBe(true);
+      expect(session.can("/com/example/demo", "read")).toBe(true);
+      expect(session.can("/com/example/demo", "write")).toBe(false);
+    });
+
+    it("returns false when no permissions match", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "reader" },
+        roles: [],
+        permissions: [{ path: "/public", actions: ["read"] }],
+      };
+
+      expect(session.can("/private/path", "read")).toBe(false);
+    });
+  });
+});

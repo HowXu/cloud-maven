@@ -97,6 +97,10 @@ export function useMavenMetadata() {
   };
 
   const parseMetadata = (source: string): MavenMetadata | null => {
+    if (!source) {
+      return null;
+    }
+
     const document = new DOMParser().parseFromString(source, "application/xml");
 
     if (document.querySelector("parsererror")) {

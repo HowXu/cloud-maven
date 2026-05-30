@@ -22,7 +22,7 @@
 - 加密: Web Crypto API (PBKDF2-SHA256)
 - 测试: Vitest + @cloudflare/vitest-pool-workers
 
-## 当前进度 (2026-05-29)
+## 当前进度 (2026-05-30)
 
 核心链路已有首版代码，大部分接口已实现：
 
@@ -38,12 +38,26 @@
 - maven 模块: GET/HEAD/PUT/POST/DELETE 文件操作、目录详情、版本摘要、目录级删除、POM 生成
 - README.md: R2/KV 说明、环境变量、bootstrap token、实现边界
 
+### 2026-05-30 已完成改动
+- [x] 移除 release/snapshots 区分 — `RepositoryPolicy.allowOverwrite` 替代原有双字段
+- [x] 修复 `hasPermission` 根路径 `/` 匹配 bug — 现在正确匹配所有子路径
+- [x] 删除目录后自动维护 `maven-metadata.xml` — 从 versions 列表移除已删版本，更新 latest/lastUpdated
+
 ### 待补齐
-- metadata 自动维护策略（当前读取时计算，不主动写 R2）
+- metadata 自动维护策略 — 仅完成**删除目录后**自动更新（✅）
 - 生产级统计成本控制（当前最多 5 页 R2 list 近似统计）
-- `hasPermission` 根路径 `/` 匹配 bug（归一化为空字符串导致不匹配子路径）
 - vitest 版本兼容（@cloudflare/vitest-pool-workers 需 vitest 2.0.x - 3.2.x，当前实际安装可能为 4.x）
 - KV namespace id 需要部署者替换为实际值
+
+### 2026-05-30 需求同步（已完成）
+
+#### 1. 移除 release/snapshots 区分 ✅
+**改动文件：**
+- `src/env.ts` — `RepositoryPolicy.allowOverwrite` 替代原有双字段
+- `src/config/index.ts` — DEFAULT_POLICY 和 updateSettings 合并
+- `src/shared/mime.ts` — 删除 `isSnapshotArtifact()`，缓存策略不再区分 snapshot
+- `src/maven/index.ts` — 删除 `isSnapshotPath/isSnapshotVersion/ensureRedeployAllowed` snapshot 分支
+- `src/admin/index.ts` — `policy.allowOverwrite` 替代 `policy.allowReleaseRedeploy`
 
 ## 目录结构
 
@@ -87,8 +101,8 @@ maven-worker/test/
 
 ### 性能
 - 文件下载直接流式返回 R2 object body
-- Release 制品：`Cache-Control: public, max-age=31536000, immutable`
-- Snapshot/metadata：`Cache-Control: no-cache`
+- 制品缓存：`Cache-Control: public, max-age=31536000, immutable`
+- metadata：`Cache-Control: no-cache`
 - 统计写入 `ctx.waitUntil()`，不阻塞响应
 - 不主动生成 checksum（保存客户端上传的）
 

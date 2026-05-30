@@ -168,7 +168,7 @@ adminRoutes.get('/settings', authManager, async (c) => {
     baseUrl: settings.baseUrl,
     defaultRepository: settings.defaultRepository,
     anonymousRead: policy.visibility === 'PUBLIC',
-    allowOverwrite: policy.allowReleaseRedeploy,
+    allowOverwrite: policy.allowOverwrite,
     generateChecksums: settings.generateChecksums,
     maintainMetadata: settings.maintainMetadata,
   })
@@ -196,7 +196,7 @@ adminRoutes.put('/settings', authManager, async (c) => {
     baseUrl: settings.baseUrl,
     defaultRepository: settings.defaultRepository,
     anonymousRead: policy.visibility === 'PUBLIC',
-    allowOverwrite: policy.allowReleaseRedeploy,
+    allowOverwrite: policy.allowOverwrite,
     generateChecksums: settings.generateChecksums,
     maintainMetadata: settings.maintainMetadata,
   })

@@ -24,7 +24,9 @@ maven-client/src/
 ├── composables/
 │   ├── useSession.test.ts
 │   ├── useRepository.test.ts
-│   └── useMavenMetadata.test.ts
+│   ├── useMavenMetadata.test.ts
+│   ├── useTheme.test.ts
+│   └── useClipboardToast.test.ts
 └── components/
     ├── browser/DeleteArtifactModal.test.ts
     └── admin/TokenEditorModal.test.ts
@@ -56,32 +58,6 @@ maven-worker/test/
 - 配置: `maven-worker/vitest.config.ts`
 - 运行命令: `npm run test` (需在 `maven-worker/` 目录下)
 - 非集成单测: `npx vitest run test/auth test/config test/maven test/shared test/tokens --pool=forks`
-
-## 已知失败 (2026-05-29)
-
-### 1. 根目录测试编排失败
-- **文件**: `scripts/workspace.mjs`
-- **现象**: `yarn test` → `spawn EINVAL`
-- **原因**: Windows 环境下直接 `spawn("npm.cmd")` 失败
-- **建议**: 通过 `cmd.exe /d /s /c npm.cmd ...` 启动
-
-### 2. 前端 useSession.test.ts — 4 个用例失败
-- **文件**: `maven-client/src/composables/useSession.test.ts`
-- **现象**: `No "setAuthorization" export is defined on the "@/api/client" mock`
-- **原因**: mock 缺少 `setAuthorization` 导出
-- **修复**: 在 mock 中补充 `setAuthorization: vi.fn()`
-
-### 3. 后端 Vitest 版本不兼容
-- **现象**: `Runner @cloudflare/vitest-pool-workers is not supported`
-- **原因**: 实际安装的 vitest 为 4.x，但 pool 要求 2.0.x - 3.2.x
-- **建议**: 降级 vitest 到 3.2.x 或升级 pool 版本
-
-### 4. 后端 permissions.test.ts — 根路径权限匹配失败
-- **文件**: `maven-worker/test/tokens/permissions.test.ts`
-- **用例**: `matches permissions by the longest path prefix`
-- **现象**: `/` 路径的 read 权限无法匹配 `/com/other/demo/app.jar`
-- **原因**: `hasPermission` 将 `/` 归一化为空字符串，最长匹配时被忽略
-- **影响**: token 配置 `/` 全局 read 权限无法生效
 
 ## 工作流程
 

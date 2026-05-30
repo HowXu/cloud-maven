@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Copy } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
+import hljs from "highlight.js";
 
 import { createArtifactUrl } from "@/api/client";
 import { mavenApi } from "@/api/maven";
@@ -33,7 +34,7 @@ const metadataLoading = ref(false);
 const metadataNote = ref("");
 let metadataRequestId = 0;
 
-const repositoryId = computed(() => props.path.split("/").filter(Boolean)[0] || "releases");
+const repositoryId = computed(() => props.path.split("/").filter(Boolean)[0] || "");
 const repositoryUrl = computed(() => {
   const url = createArtifactUrl(repositoryId.value);
   return new URL(url, window.location.origin).toString();
@@ -136,6 +137,16 @@ watch(
 const selectTab = (tab: (typeof snippetTabs)[number]) => {
   selected.value = tab;
 };
+
+const highlightedCode = computed(() => {
+  const code = snippet.value;
+  const lang = selected.value === "Maven" ? "xml" : selected.value === "Gradle Kotlin" ? "kotlin" : "groovy";
+  try {
+    return hljs.highlight(code, { language: lang }).value;
+  } catch {
+    return code;
+  }
+});
 </script>
 
 <template>
@@ -188,7 +199,7 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
     </div>
 
     <transition name="slide-fade" mode="out-in">
-      <pre :key="selected + path + effectiveVersion" class="snippet-code"><code>{{ snippet }}</code></pre>
+      <pre :key="selected + path + effectiveVersion" class="snippet-code"><code v-html="highlightedCode"></code></pre>
     </transition>
   </aside>
 </template>

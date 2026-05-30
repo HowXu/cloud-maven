@@ -2,8 +2,7 @@ export type RepositoryVisibility = 'PUBLIC' | 'PRIVATE' | 'HIDDEN'
 
 export interface RepositoryPolicy {
   visibility: RepositoryVisibility
-  allowReleaseRedeploy: boolean
-  allowSnapshotRedeploy: boolean
+  allowOverwrite: boolean
 }
 
 export interface AccessPermission {

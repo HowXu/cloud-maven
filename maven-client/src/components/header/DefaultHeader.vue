@@ -20,7 +20,6 @@ const menuOpen = ref(false);
     <div class="content-container flex items-start justify-between gap-4 py-8 sm:items-center">
       <button class="text-left" type="button" @click="$emit('select-home')">
         <span class="block text-xl font-semibold">Cloud-Maven</span>
-        <span class="mt-1 block text-sm text-gray-500 dark:text-gray-400">Serverless Maven repository</span>
       </button>
 
       <div class="flex items-center gap-2">

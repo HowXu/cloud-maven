@@ -81,10 +81,34 @@ const submit = async () => {
   background: white;
   padding: 1.5rem;
   box-shadow: 0 20px 45px rgb(15 23 42 / 0.24);
+  color: rgb(55 65 81);
 }
 
 .dark .modal-panel {
   border-color: rgb(31 41 55);
   background: rgb(17 24 39);
+  color: rgb(229 231 235);
+}
+
+.field-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.375rem;
+  background: white;
+  color: rgb(17 24 39);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.dark .field-control {
+  border-color: rgb(55 65 81);
+  background: rgb(31 41 55);
+  color: rgb(229 231 235);
+}
+
+.field-control:focus {
+  outline: 2px solid rgb(37 99 235);
+  outline-offset: 2px;
 }
 </style>

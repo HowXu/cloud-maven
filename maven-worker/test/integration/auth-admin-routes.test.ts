@@ -6,8 +6,7 @@ import type { AccessPermission, RepositoryPolicy } from '../../src/env'
 
 const PUBLIC_POLICY: RepositoryPolicy = {
   visibility: 'PUBLIC',
-  allowReleaseRedeploy: false,
-  allowSnapshotRedeploy: true,
+  allowOverwrite: false,
 }
 
 const requestUrl = (path: string) => `https://cloud-maven.test${path}`
@@ -215,7 +214,7 @@ describe('Worker auth and admin routes', () => {
       body: JSON.stringify({
         title: 'Updated Repo Title',
         baseUrl: 'https://updated.example.com',
-        defaultRepository: 'releases',
+        defaultRepository: '',
         anonymousRead: false,
         allowOverwrite: true,
         generateChecksums: true,

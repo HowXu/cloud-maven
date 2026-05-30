@@ -24,39 +24,34 @@ describe('config repository policy', () => {
     const policy = await getRepositoryPolicy(kv)
 
     expect(policy.visibility).toBe('PUBLIC')
-    expect(policy.allowReleaseRedeploy).toBe(false)
-    expect(policy.allowSnapshotRedeploy).toBe(true)
+    expect(policy.allowOverwrite).toBe(false)
   })
 
   it('persists and returns stored policy', async () => {
     const kv = mockKv()
     const stored: RepositoryPolicy = {
       visibility: 'PRIVATE',
-      allowReleaseRedeploy: true,
-      allowSnapshotRedeploy: false,
+      allowOverwrite: true,
     }
     await kv.put('config:repository', JSON.stringify(stored))
 
     const policy = await getRepositoryPolicy(kv)
 
     expect(policy.visibility).toBe('PRIVATE')
-    expect(policy.allowReleaseRedeploy).toBe(true)
-    expect(policy.allowSnapshotRedeploy).toBe(false)
+    expect(policy.allowOverwrite).toBe(true)
   })
 
   it('merges partial updates into existing policy', async () => {
     const kv = mockKv()
     await kv.put('config:repository', JSON.stringify({
       visibility: 'PUBLIC',
-      allowReleaseRedeploy: false,
-      allowSnapshotRedeploy: true,
+      allowOverwrite: false,
     }))
 
     const updated = await updateRepositoryPolicy(kv, { visibility: 'PRIVATE' })
 
     expect(updated.visibility).toBe('PRIVATE')
-    expect(updated.allowReleaseRedeploy).toBe(false)
-    expect(updated.allowSnapshotRedeploy).toBe(true)
+    expect(updated.allowOverwrite).toBe(false)
   })
 })
 
@@ -78,7 +73,7 @@ describe('config settings', () => {
     const stored: ClientSettings = {
       title: 'Custom Title',
       baseUrl: 'https://custom.example.com',
-      defaultRepository: 'releases',
+      defaultRepository: '',
       anonymousRead: false,
       allowOverwrite: true,
       generateChecksums: true,
@@ -111,12 +106,12 @@ describe('config settings', () => {
     expect(policy.visibility).toBe('PRIVATE')
   })
 
-  it('maps allowOverwrite to allowReleaseRedeploy in policy', async () => {
+  it('maps allowOverwrite to allowOverwrite in policy', async () => {
     const kv = mockKv()
 
     await updateSettings(kv, { allowOverwrite: true })
 
     const policy = await getRepositoryPolicy(kv)
-    expect(policy.allowReleaseRedeploy).toBe(true)
+    expect(policy.allowOverwrite).toBe(true)
   })
 })
