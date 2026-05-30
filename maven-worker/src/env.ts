@@ -48,8 +48,8 @@ export interface TokenInfo {
 
 export type Bindings = {
   ASSETS?: Fetcher
-  MAVEN_BUCKET: R2Bucket
-  MAVEN_KV: KVNamespace
+  MAVEN_BUCKET?: R2Bucket
+  MAVEN_KV?: KVNamespace
   ADMIN_BOOTSTRAP_TOKEN?: string
   SESSION_TTL_SECONDS?: string
   DEFAULT_REPOSITORY_POLICY?: string

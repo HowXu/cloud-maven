@@ -10,16 +10,38 @@ binding = "ASSETS"
 directory = "./dist"
 run_worker_first = true
 
-[[r2_buckets]]
-binding = "MAVEN_BUCKET"
-bucket_name = "cloud-maven"
-
-[[kv_namespaces]]
-binding = "MAVEN_KV"
-id = "cloud-maven"
-
 [vars]
 SESSION_TTL_SECONDS = "86400"
 DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'
 
 # Set with: wrangler secret put ADMIN_BOOTSTRAP_TOKEN
+
+[env.staging]
+name = "cloud-maven-worker-staging"
+
+[[env.staging.r2_buckets]]
+binding = "MAVEN_BUCKET"
+bucket_name = "cloud-maven"
+
+[[env.staging.kv_namespaces]]
+binding = "MAVEN_KV"
+id = "cd93fa4530444160a19ccd88d709cac0"
+
+[env.staging.vars]
+SESSION_TTL_SECONDS = "86400"
+DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'
+
+[env.production]
+name = "cloud-maven-worker"
+
+[env.production.kv_namespaces]
+binding = "MAVEN_KV"
+id = ""
+
+[env.production.r2_buckets]
+binding = "MAVEN_BUCKET"
+bucket_name = ""
+
+[env.production.vars]
+SESSION_TTL_SECONDS = "86400"
+DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'

@@ -47,6 +47,10 @@ async function tryParseToken(c: Context<AppEnv>): Promise<TokenInfo | null> {
 }
 
 async function ensureReadAccess(c: Context<AppEnv>, path: string): Promise<TokenInfo | null> {
+  if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) {
+    throw unauthorized()
+  }
+
   const token = await tryParseToken(c)
   if (token) {
     if (!hasPermission(token.permissions, path.startsWith('/') ? path : `/${path}`, 'read')) {
@@ -64,6 +68,9 @@ async function ensureReadAccess(c: Context<AppEnv>, path: string): Promise<Token
 }
 
 async function ensureWriteAccess(c: Context<AppEnv>, path: string): Promise<TokenInfo> {
+  if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) {
+    throw unauthorized()
+  }
   const token = await tryParseToken(c)
   if (!token) throw unauthorized()
   if (!hasPermission(token.permissions, path.startsWith('/') ? path : `/${path}`, 'write')) {
@@ -73,6 +80,9 @@ async function ensureWriteAccess(c: Context<AppEnv>, path: string): Promise<Toke
 }
 
 async function ensureDeleteAccess(c: Context<AppEnv>, path: string): Promise<TokenInfo> {
+  if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) {
+    throw unauthorized()
+  }
   const token = await tryParseToken(c)
   if (!token) throw unauthorized()
   if (!hasPermission(token.permissions, path.startsWith('/') ? path : `/${path}`, 'delete')) {
@@ -86,6 +96,7 @@ function isSnapshotPath(path: string): boolean {
 }
 
 async function ensureRedeployAllowed(c: Context<AppEnv>, path: string): Promise<void> {
+  if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) return
   const policy = await getRepositoryPolicy(c.env.MAVEN_KV)
   const existing = await headObject(c.env.MAVEN_BUCKET, path)
   if (!existing) return
@@ -204,6 +215,9 @@ export function parseMavenMetadata(xml: string): MavenMetadata {
 }
 
 async function readMetadata(c: Context<AppEnv>, path: string): Promise<MavenMetadata> {
+  if (!c.env.MAVEN_KV || !c.env.MAVEN_BUCKET) {
+    throw notFound()
+  }
   const metadataPath = path.endsWith('/maven-metadata.xml') || path === 'maven-metadata.xml'
     ? path
     : `${path}/maven-metadata.xml`
@@ -217,6 +231,7 @@ async function readMetadata(c: Context<AppEnv>, path: string): Promise<MavenMeta
 }
 
 async function deleteMavenPrefix(c: Context<AppEnv>, path: string): Promise<number> {
+  if (!c.env.MAVEN_BUCKET) throw notFound()
   const prefix = path.endsWith('/') ? path : `${path}/`
   const firstPage = await listObjects(c.env.MAVEN_BUCKET, prefix, undefined, 1)
   if (firstPage.objects.length === 0) {
@@ -227,6 +242,7 @@ async function deleteMavenPrefix(c: Context<AppEnv>, path: string): Promise<numb
 }
 
 export async function handleFileGet(c: Context<AppEnv>): Promise<Response> {
+  if (!c.env.MAVEN_BUCKET) return c.notFound()
   const mavenPath = extractMavenPath(c)
 
   try {
@@ -253,6 +269,7 @@ export async function handleFileGet(c: Context<AppEnv>): Promise<Response> {
 }
 
 export async function handleFileHead(c: Context<AppEnv>): Promise<Response> {
+  if (!c.env.MAVEN_BUCKET) return c.notFound()
   const mavenPath = extractMavenPath(c)
 
   try {
@@ -279,6 +296,7 @@ export async function handleFileHead(c: Context<AppEnv>): Promise<Response> {
 }
 
 export async function handleFilePut(c: Context<AppEnv>): Promise<Response> {
+  if (!c.env.MAVEN_BUCKET) throw badRequest('Storage not configured')
   const mavenPath = extractMavenPath(c)
   normalizeMavenPath(mavenPath)
 
@@ -332,6 +350,7 @@ export async function handleFilePut(c: Context<AppEnv>): Promise<Response> {
 }
 
 export async function handleFileDelete(c: Context<AppEnv>): Promise<Response> {
+  if (!c.env.MAVEN_BUCKET) throw badRequest('Storage not configured')
   const mavenPath = extractMavenPath(c)
   normalizeMavenPath(mavenPath)
 
@@ -464,6 +483,7 @@ async function generatePom(c: Context<AppEnv>, rawPath: string): Promise<Respons
 }
 
 async function details(c: Context<AppEnv>): Promise<Response> {
+  if (!c.env.MAVEN_BUCKET) return jsonData(c, { path: '', parentPath: null, entries: [], canRead: false, canWrite: false })
   const rawPath = c.req.param('path') || ''
   const normalized = normalizeMavenPath(rawPath, { allowRoot: true })
 

@@ -37,7 +37,9 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
   }
 
   if (!adminBootstrapChecked) {
-    await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+    if (c.env.MAVEN_KV) {
+      await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+    }
     adminBootstrapChecked = true
   }
 
@@ -49,6 +51,7 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
 
   c.executionCtx.waitUntil(
     (async () => {
+      if (!c.env.MAVEN_KV) return undefined
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
       const key = `stats:daily:${today}:requests`
       const current = await c.env.MAVEN_KV.get(key)
@@ -77,15 +80,17 @@ app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)
 
 app.onError((error, c) => {
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  c.executionCtx.waitUntil(
-    (async () => {
-      const key = `stats:daily:${today}:errors`
-      const current = await c.env.MAVEN_KV.get(key)
-      await c.env.MAVEN_KV.put(key, String((Number(current) || 0) + 1))
-      return undefined
-    })()
-  )
+  if (c.env.MAVEN_KV) {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    c.executionCtx.waitUntil(
+      (async () => {
+        const key = `stats:daily:${today}:errors`
+        const current = await c.env.MAVEN_KV.get(key)
+        await c.env.MAVEN_KV.put(key, String((Number(current) || 0) + 1))
+        return undefined
+      })()
+    )
+  }
 
   return jsonError(c, toAppError(error))
 })

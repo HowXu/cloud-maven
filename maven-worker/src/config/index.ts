@@ -20,7 +20,8 @@ const DEFAULT_SETTINGS: ClientSettings = {
   maintainMetadata: false,
 }
 
-export async function getRepositoryPolicy(kv: KVNamespace): Promise<RepositoryPolicy> {
+export async function getRepositoryPolicy(kv: KVNamespace | undefined): Promise<RepositoryPolicy> {
+  if (!kv) return { ...DEFAULT_POLICY }
   const raw = await kv.get(KV_KEY_REPOSITORY)
   if (!raw) {
     const policy = { ...DEFAULT_POLICY }
@@ -35,16 +36,19 @@ export async function getRepositoryPolicy(kv: KVNamespace): Promise<RepositoryPo
 }
 
 export async function updateRepositoryPolicy(
-  kv: KVNamespace,
+  kv: KVNamespace | undefined,
   patch: Partial<RepositoryPolicy>
 ): Promise<RepositoryPolicy> {
   const current = await getRepositoryPolicy(kv)
   const updated: RepositoryPolicy = { ...current, ...patch }
-  await kv.put(KV_KEY_REPOSITORY, JSON.stringify(updated))
+  if (kv) {
+    await kv.put(KV_KEY_REPOSITORY, JSON.stringify(updated))
+  }
   return updated
 }
 
-export async function getSettings(kv: KVNamespace): Promise<ClientSettings> {
+export async function getSettings(kv: KVNamespace | undefined): Promise<ClientSettings> {
+  if (!kv) return { ...DEFAULT_SETTINGS }
   const raw = await kv.get(KV_KEY_SETTINGS)
   if (!raw) {
     await kv.put(KV_KEY_SETTINGS, JSON.stringify(DEFAULT_SETTINGS))
@@ -58,7 +62,7 @@ export async function getSettings(kv: KVNamespace): Promise<ClientSettings> {
 }
 
 export async function updateSettings(
-  kv: KVNamespace,
+  kv: KVNamespace | undefined,
   patch: Partial<ClientSettings>
 ): Promise<ClientSettings> {
   const current = await getSettings(kv)
@@ -72,7 +76,9 @@ export async function updateSettings(
     policyPatch.allowReleaseRedeploy = patch.allowOverwrite
   }
 
-  await kv.put(KV_KEY_SETTINGS, JSON.stringify(updated))
+  if (kv) {
+    await kv.put(KV_KEY_SETTINGS, JSON.stringify(updated))
+  }
 
   if (Object.keys(policyPatch).length > 0) {
     await updateRepositoryPolicy(kv, policyPatch)

@@ -94,6 +94,7 @@ function tokenDetails(token: AccessToken) {
 }
 
 export async function parseToken(c: Context<AppEnv>): Promise<AccessToken | null> {
+  if (!c.env.MAVEN_KV) return null
   const header = c.req.header('Authorization')
   if (header) {
     const parsed = parseXBasicHeader(header)
@@ -125,7 +126,7 @@ export function auth(opts?: {
     if (!token) {
       if (opts?.allowAnonymousRead && opts?.permission === 'read') {
         const policy = await getRepositoryPolicy(c.env.MAVEN_KV)
-        if (policy.visibility === 'PUBLIC') return next()
+        if (!policy || policy.visibility === 'PUBLIC') return next()
       }
       throw unauthorized()
     }
@@ -143,6 +144,7 @@ export function auth(opts?: {
 export const authApiRoutes = new Hono<AppEnv>()
 
 authApiRoutes.post('/login', async (c) => {
+  if (!c.env.MAVEN_KV) throw unauthorized()
   const body = await c.req.json<{ name?: string; secret?: string }>().catch(() => null)
   if (!body || !body.name || !body.secret) throw unauthorized()
 
@@ -181,7 +183,7 @@ authApiRoutes.get('/session', async (c) => {
 
 authApiRoutes.post('/logout', async (c) => {
   const sessionId = getSessionId(c)
-  if (sessionId) {
+  if (sessionId && c.env.MAVEN_KV) {
     await deleteSession(c.env.MAVEN_KV, sessionId)
   }
   c.header('Set-Cookie', expiredSessionCookie())

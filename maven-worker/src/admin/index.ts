@@ -51,12 +51,13 @@ export const adminRoutes = new Hono<AppEnv>()
 
 adminRoutes.get('/stats', authManager, async (c) => {
   const kv = c.env.MAVEN_KV
+  const bucket = c.env.MAVEN_BUCKET
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
 
   const [reqsRaw, errsRaw, objectStats] = await Promise.all([
-    kv.get(`stats:daily:${today}:requests`),
-    kv.get(`stats:daily:${today}:errors`),
-    summarizeObjects(c.env.MAVEN_BUCKET),
+    kv?.get(`stats:daily:${today}:requests`),
+    kv?.get(`stats:daily:${today}:errors`),
+    kv && bucket ? summarizeObjects(bucket) : Promise.resolve({ objects: 0, storageBytes: 0, truncated: false }),
   ])
 
   return jsonData(c, {
@@ -69,6 +70,7 @@ adminRoutes.get('/stats', authManager, async (c) => {
 })
 
 adminRoutes.get('/tokens', authManager, async (c) => {
+  if (!c.env.MAVEN_KV) throw badRequest('Storage not configured')
   const tokens = await listTokens(c.env.MAVEN_KV)
   return jsonData(c, tokens.map(t => ({
     id: t.id,
@@ -81,6 +83,7 @@ adminRoutes.get('/tokens', authManager, async (c) => {
 })
 
 adminRoutes.post('/tokens', authManager, async (c) => {
+  if (!c.env.MAVEN_KV) throw badRequest('Storage not configured')
   const body = await c.req.json<{
     name: string
     description?: string
@@ -111,6 +114,7 @@ adminRoutes.post('/tokens', authManager, async (c) => {
 })
 
 adminRoutes.put('/tokens/:id', authManager, async (c) => {
+  if (!c.env.MAVEN_KV) throw badRequest('Storage not configured')
   const id = c.req.param('id')
   if (!id) throw badRequest('Token id is required')
   const body = await c.req.json<{
@@ -149,6 +153,7 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
 })
 
 adminRoutes.delete('/tokens/:id', authManager, async (c) => {
+  if (!c.env.MAVEN_KV) throw badRequest('Storage not configured')
   const id = c.req.param('id')
   if (!id) throw badRequest('Token id is required')
   await deleteToken(c.env.MAVEN_KV, id)
