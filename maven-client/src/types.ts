@@ -20,6 +20,7 @@ export interface RepositoryDetails {
   entries: RepositoryEntry[];
   canRead: boolean;
   canWrite: boolean;
+  canDelete: boolean;
 }
 
 export interface AccessPermission {

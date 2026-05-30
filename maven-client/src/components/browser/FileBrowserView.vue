@@ -3,8 +3,8 @@ import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import BreadcrumbNavigation from "@/components/browser/BreadcrumbNavigation.vue";
+import DeleteDirectoryModal from "@/components/browser/DeleteDirectoryModal.vue";
 import FileList from "@/components/browser/FileList.vue";
-import DeleteEntryModal from "@/components/browser/DeleteEntryModal.vue";
 import ErrorState from "@/components/common/ErrorState.vue";
 import LoadingState from "@/components/common/LoadingState.vue";
 import SnippetsCard from "@/components/card/SnippetsCard.vue";
@@ -22,6 +22,8 @@ watch(
   },
   { immediate: true },
 );
+
+const canDelete = computed(() => repository.details.value?.canDelete === true);
 </script>
 
 <template>
@@ -29,8 +31,9 @@ watch(
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div>
         <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
-          <DeleteEntryModal
-            v-if="repository.canDelete.value"
+          <BreadcrumbNavigation :path="currentPath" />
+          <DeleteDirectoryModal
+            v-if="canDelete"
             :path="currentPath"
             @deleted="repository.load(currentPath, true)"
           />

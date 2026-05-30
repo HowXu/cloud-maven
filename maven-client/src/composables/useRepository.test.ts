@@ -13,11 +13,12 @@ vi.mock("mosha-vue-toastify", () => ({
   createToast: vi.fn(),
 }));
 
-const detailsFor = (path: string, canWrite = false) => ({
+const detailsFor = (path: string, canWrite = false, canDelete = false) => ({
   path,
   parentPath: path === "/" ? null : `/${path.split("/").slice(0, -1).join("/")}`,
   canRead: true,
   canWrite,
+  canDelete,
   entries: [
     {
       name: "demo",
@@ -45,7 +46,7 @@ describe("useRepository", () => {
     it("loads repository details and exposes entries plus write permission", async () => {
       const repo = useRepository();
       const details = detailsFor("releases", true);
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("releases");
 
@@ -59,7 +60,7 @@ describe("useRepository", () => {
     it("uses cache when available without force", async () => {
       const repo = useRepository();
       const details = detailsFor("cache-test");
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("cache-test");
       await repo.load("cache-test");
@@ -70,7 +71,7 @@ describe("useRepository", () => {
     it("forces reload when cache is bypassed", async () => {
       const repo = useRepository();
       const details = detailsFor("releases");
-      vi.mocked(mavenApi.details).mockResolvedValue({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValue({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("releases", true);
       await repo.load("releases", true);
@@ -105,7 +106,7 @@ describe("useRepository", () => {
     it("exposes entries from details", async () => {
       const repo = useRepository();
       const details = detailsFor("releases");
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("releases");
 
@@ -116,7 +117,7 @@ describe("useRepository", () => {
 
     it("returns empty array when no entries", async () => {
       const repo = useRepository();
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: { path: "empty", parentPath: null, canRead: true, canWrite: false, entries: [] } } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: { path: "empty", parentPath: null, canRead: true, canWrite: false, canDelete: false, entries: [] } } as unknown as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("empty");
 
@@ -128,7 +129,7 @@ describe("useRepository", () => {
     it("returns true when canWrite is true in details", async () => {
       const repo = useRepository();
       const details = detailsFor("writable", true);
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("writable");
 
@@ -138,7 +139,7 @@ describe("useRepository", () => {
     it("returns false when canWrite is false in details", async () => {
       const repo = useRepository();
       const details = detailsFor("readonly", false);
-      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as Awaited<ReturnType<typeof mavenApi.details>>);
+      vi.mocked(mavenApi.details).mockResolvedValueOnce({ data: details } as unknown as Awaited<ReturnType<typeof mavenApi.details>>);
 
       await repo.load("readonly");
 
