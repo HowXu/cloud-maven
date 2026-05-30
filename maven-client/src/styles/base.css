@@ -34,12 +34,34 @@
 }
 
 html {
+  min-height: 100%;
   scroll-padding-top: 1rem;
+  background: rgb(244 245 247);
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100%;
+  overflow-x: hidden;
+  background: rgb(244 245 247);
+}
+
+#app {
+  min-height: 100%;
+  background: rgb(244 245 247);
+}
+
+html.dark,
+html.dark body,
+html.dark #app {
+  background: black;
+}
+
+.page-shell,
+.content-container {
+  min-width: 0;
+  overflow-x: clip;
 }
 
 @media (max-width: 640px) {

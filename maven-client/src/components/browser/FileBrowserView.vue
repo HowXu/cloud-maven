@@ -42,7 +42,7 @@ watch(
 
 <template>
   <section class="content-container py-5 sm:py-8">
-    <div class="grid gap-5 sm:gap-6 md:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] xl:grid-cols-[minmax(0,1fr)_24rem]">
+    <div class="grid min-w-0 gap-5 sm:gap-6 md:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] xl:grid-cols-[minmax(0,1fr)_24rem]">
       <div class="min-w-0">
         <div class="mb-4 flex flex-wrap items-center justify-start gap-3">
           <BreadcrumbNavigation :path="currentPath" />

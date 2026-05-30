@@ -163,13 +163,13 @@ const highlightedCode = computed(() => {
 </script>
 
 <template>
-  <aside class="panel-surface lift rounded-lg p-4 sm:p-5 md:self-start">
+  <aside class="panel-surface lift min-w-0 rounded-lg p-4 sm:p-5 md:self-start">
     <div class="mb-4">
       <p class="muted-label">Snippet</p>
       <h2 class="font-semibold">{{ coordinates ? "Artifact details" : "Repository details" }}</h2>
     </div>
 
-    <div v-if="coordinates" class="mb-4 grid gap-2 rounded-md bg-gray-50 p-3 text-xs dark:bg-gray-800">
+    <div v-if="coordinates" class="mb-4 grid min-w-0 gap-2 rounded-md bg-gray-50 p-3 text-xs dark:bg-gray-800">
       <div class="metadata-row">
         <span>Group</span>
         <strong>{{ coordinates.groupId }}</strong>
@@ -250,6 +250,8 @@ const highlightedCode = computed(() => {
 }
 
 .snippet-code {
+  width: 100%;
+  max-width: 100%;
   min-height: 9rem;
   overflow: auto;
   border-radius: 0.5rem;
@@ -265,7 +267,7 @@ const highlightedCode = computed(() => {
 
 .snippet-code code {
   display: block;
-  min-width: 0;
+  min-width: max-content;
 }
 
 .dark .metadata-row span {

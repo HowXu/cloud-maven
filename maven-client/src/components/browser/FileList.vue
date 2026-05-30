@@ -97,7 +97,7 @@ const downloadEntry = async (entry: RepositoryEntry) => {
 </script>
 
 <template>
-  <div>
+  <div class="file-list">
     <EmptyState
       v-if="sortedEntries.length === 0"
       title="Directory is empty"
@@ -157,9 +157,15 @@ const downloadEntry = async (entry: RepositoryEntry) => {
 </template>
 
 <style scoped>
+.file-list {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .entry-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  max-width: 100%;
   align-items: center;
   gap: 0.5rem;
   min-height: 3.5rem;
@@ -219,6 +225,7 @@ const downloadEntry = async (entry: RepositoryEntry) => {
 
 .entry-actions {
   display: flex;
+  min-width: max-content;
   align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;
