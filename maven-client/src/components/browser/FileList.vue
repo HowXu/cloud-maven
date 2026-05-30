@@ -197,6 +197,7 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   align-items: center;
   justify-content: flex-end;
   gap: 0.4rem;
+  min-width: calc(2.25rem + 2.25rem + 0.4rem);
 }
 
 .dark .entry-row {
