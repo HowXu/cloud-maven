@@ -41,14 +41,14 @@ watch(
 </script>
 
 <template>
-  <section class="content-container py-8">
-    <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div>
+  <section class="content-container py-5 sm:py-8">
+    <div class="grid gap-5 sm:gap-6 md:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div class="min-w-0">
         <div class="mb-4 flex flex-wrap items-center justify-start gap-3">
           <BreadcrumbNavigation :path="currentPath" />
         </div>
 
-        <div class="panel-surface rounded-lg">
+        <div class="panel-surface overflow-hidden rounded-lg">
           <LoadingState v-if="repository.loading.value" label="Loading Maven directory..." />
           <NotFoundPage v-else-if="repository.error.value && currentPath" embedded />
           <ErrorState

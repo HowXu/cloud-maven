@@ -35,6 +35,8 @@ defineProps<{
 @media (max-width: 640px) {
   .intro-card {
     flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
   }
 }
 
@@ -45,6 +47,13 @@ defineProps<{
   border-radius: 50%;
   overflow: hidden;
   background: rgb(229 231 235);
+}
+
+@media (max-width: 640px) {
+  .intro-image {
+    width: 5.5rem;
+    height: 5.5rem;
+  }
 }
 
 .dark .intro-image {

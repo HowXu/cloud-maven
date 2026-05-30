@@ -219,8 +219,8 @@ watch(isManager, loadAdminData);
 </script>
 
 <template>
-  <section class="content-container py-8">
-    <div v-if="!isLogged" class="panel-surface rounded-lg p-8">
+  <section class="content-container py-5 sm:py-8">
+    <div v-if="!isLogged" class="panel-surface rounded-lg p-5 sm:p-8">
       <p class="muted-label">Admin</p>
       <h2 class="mt-2 text-xl font-semibold">Sign in to manage this Maven repository</h2>
       <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
@@ -229,7 +229,7 @@ watch(isManager, loadAdminData);
       <LoginModal class="mt-6" />
     </div>
 
-    <div v-else-if="!isManager" class="panel-surface rounded-lg p-8">
+    <div v-else-if="!isManager" class="panel-surface rounded-lg p-5 sm:p-8">
       <div class="flex items-center gap-3">
         <ShieldCheck class="h-5 w-5 text-amber-600" />
         <h2 class="text-xl font-semibold">Current token is not a manager</h2>
@@ -255,22 +255,22 @@ watch(isManager, loadAdminData);
       <p v-if="error" class="mb-4 text-sm text-amber-700 dark:text-amber-300">{{ error }}</p>
 
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="panel-surface lift rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
           <Database class="mb-4 h-5 w-5 text-blue-600" />
           <p class="muted-label">Repositories</p>
           <strong class="mt-2 block text-2xl">{{ stats?.repositories ?? "-" }}</strong>
         </article>
-        <article class="panel-surface lift rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
           <Database class="mb-4 h-5 w-5 text-teal-700" />
           <p class="muted-label">Objects</p>
           <strong class="mt-2 block text-2xl">{{ stats?.objects ?? "-" }}</strong>
         </article>
-        <article class="panel-surface lift rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
           <ShieldCheck class="mb-4 h-5 w-5 text-amber-600" />
           <p class="muted-label">Requests 24h</p>
           <strong class="mt-2 block text-2xl">{{ stats?.requests24h ?? "-" }}</strong>
         </article>
-        <article class="panel-surface lift rounded-lg p-5">
+        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
           <KeyRound class="mb-4 h-5 w-5 text-blue-600" />
           <p class="muted-label">Tokens</p>
           <strong class="mt-2 block text-2xl">{{ tokenCount || "-" }}</strong>
@@ -278,7 +278,7 @@ watch(isManager, loadAdminData);
       </div>
 
       <section class="mt-8 grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
-        <div class="panel-surface rounded-lg p-5">
+        <div class="panel-surface rounded-lg p-4 sm:p-5">
           <div class="mb-5">
             <p class="muted-label">Access token</p>
             <h3 class="mt-1 text-lg font-semibold">Create token</h3>
@@ -332,7 +332,7 @@ watch(isManager, loadAdminData);
         </div>
 
         <div>
-          <div class="mb-3 flex items-center justify-between">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
             <h3 class="text-lg font-semibold">Access tokens</h3>
             <button class="soft-button" type="button" @click="openCreate">
               <Plus class="h-4 w-4" />
@@ -367,7 +367,7 @@ watch(isManager, loadAdminData);
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 justify-self-start md:justify-self-end">
+              <div class="flex flex-wrap items-center gap-2 justify-self-start md:justify-self-end">
                 <button
                   class="soft-button"
                   type="button"
@@ -449,6 +449,7 @@ watch(isManager, loadAdminData);
 
 .status-pill,
 .permission-pill {
+  display: inline-block;
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
   font-size: 0.72rem;
@@ -467,6 +468,8 @@ watch(isManager, loadAdminData);
 .permission-pill {
   background: rgb(243 244 246);
   color: rgb(75 85 99);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .secret-panel {

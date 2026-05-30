@@ -59,7 +59,7 @@ watch(isManager, loadSettings);
 </script>
 
 <template>
-  <section class="content-container py-8">
+  <section class="content-container py-5 sm:py-8">
     <div class="mb-6">
       <p class="muted-label">Settings</p>
       <h2 class="text-xl font-semibold">Repository behavior</h2>
@@ -68,11 +68,11 @@ watch(isManager, loadSettings);
       </p>
     </div>
 
-    <div v-if="!isManager" class="panel-surface rounded-lg p-8 text-sm text-gray-600 dark:text-gray-300">
+    <div v-if="!isManager" class="panel-surface rounded-lg p-5 text-sm text-gray-600 dark:text-gray-300 sm:p-8">
       Manager access is required to edit settings.
     </div>
 
-    <form v-else class="panel-surface max-w-3xl rounded-lg p-6" @submit.prevent="saveSettings">
+    <form v-else class="panel-surface max-w-3xl rounded-lg p-5 sm:p-6" @submit.prevent="saveSettings">
       <p v-if="loading" class="mb-4 text-sm text-gray-500 dark:text-gray-400">Loading settings...</p>
       <p v-if="error" class="mb-4 text-sm text-amber-700 dark:text-amber-300">{{ error }}</p>
 

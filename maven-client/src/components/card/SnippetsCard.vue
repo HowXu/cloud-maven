@@ -163,7 +163,7 @@ const highlightedCode = computed(() => {
 </script>
 
 <template>
-  <aside class="panel-surface lift rounded-lg p-5 sm:sticky sm:top-6 sm:self-start">
+  <aside class="panel-surface lift rounded-lg p-4 sm:p-5 md:self-start">
     <div class="mb-4">
       <p class="muted-label">Snippet</p>
       <h2 class="font-semibold">{{ coordinates ? "Artifact details" : "Repository details" }}</h2>

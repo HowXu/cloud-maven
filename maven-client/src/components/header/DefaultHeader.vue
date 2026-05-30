@@ -16,6 +16,16 @@ const { details, isLogged, logout } = useSession();
 const menuOpen = ref(false);
 const siteTitle = ref("Cloud Maven");
 
+const toggleThemeFromMenu = () => {
+  toggleTheme();
+  menuOpen.value = false;
+};
+
+const logoutFromMenu = () => {
+  logout();
+  menuOpen.value = false;
+};
+
 onMounted(async () => {
   try {
     const response = await settingsApi.get();
@@ -28,20 +38,20 @@ onMounted(async () => {
 
 <template>
   <header class="bg-cloud-wash dark:bg-black">
-    <div class="content-container flex items-start justify-between gap-4 py-8 sm:items-center">
-      <button class="text-left" type="button" @click="$emit('select-home')">
-        <span class="block text-xl font-semibold">{{ siteTitle }}</span>
+    <div class="content-container flex items-center justify-between gap-3 py-5 sm:gap-4 sm:py-8">
+      <button class="min-w-0 text-left" type="button" @click="$emit('select-home')">
+        <span class="block truncate text-xl font-semibold">{{ siteTitle }}</span>
       </button>
 
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <button class="icon-button sm:hidden" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme">
-          <Sun v-if="isDark" class="h-4 w-4" />
-          <Moon v-else class="h-4 w-4" />
+          <Sun v-if="isDark" class="h-4 w-4 shrink-0" />
+          <Moon v-else class="h-4 w-4 shrink-0" />
         </button>
 
         <button class="icon-button sm:hidden" type="button" :title="menuOpen ? 'Close menu' : 'Open menu'" @click="menuOpen = !menuOpen">
-          <X v-if="menuOpen" class="h-4 w-4" />
-          <AlignJustify v-else class="h-4 w-4" />
+          <X v-if="menuOpen" class="h-4 w-4 shrink-0" />
+          <AlignJustify v-else class="h-4 w-4 shrink-0" />
         </button>
 
         <div class="hidden items-center gap-2 sm:flex">
@@ -59,20 +69,33 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="menuOpen" class="border-t border-gray-200 px-4 pb-4 pt-3 dark:border-gray-800 sm:hidden">
-      <div class="flex flex-col gap-2">
-        <button class="icon-button w-full justify-start gap-2 border" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme; menuOpen = false">
-          <Sun v-if="isDark" class="h-4 w-4" />
-          <Moon v-else class="h-4 w-4" />
-          <span>{{ isDark ? 'Light mode' : 'Dark mode' }}</span>
+    <div v-if="menuOpen" class="border-t border-gray-200 dark:border-gray-800 sm:hidden">
+      <div class="content-container flex flex-col gap-2 py-3">
+        <button class="soft-button mobile-menu-action" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleThemeFromMenu">
+          <Sun v-if="isDark" class="h-4 w-4 shrink-0" />
+          <Moon v-else class="h-4 w-4 shrink-0" />
+          <span>{{ isDark ? 'Light Mode' : 'Dark Mode' }}</span>
         </button>
 
-        <LoginModal v-if="!isLogged" @click="menuOpen = false" />
-        <button v-else class="soft-button w-full justify-start gap-2 border" type="button" @click="logout; menuOpen = false">
-          <LogOut class="h-4 w-4" />
+        <LoginModal v-if="!isLogged" class="mobile-menu-login" @click="menuOpen = false" />
+        <button v-else class="soft-button mobile-menu-action" type="button" @click="logoutFromMenu">
+          <LogOut class="h-4 w-4 shrink-0" />
           {{ details?.token.name }}
         </button>
       </div>
     </div>
   </header>
 </template>
+
+<style scoped>
+.mobile-menu-action {
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 0.5rem;
+}
+
+.mobile-menu-login :deep(.soft-button) {
+  width: 100%;
+  justify-content: flex-start;
+}
+</style>

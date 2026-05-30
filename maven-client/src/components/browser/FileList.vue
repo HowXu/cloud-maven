@@ -115,7 +115,9 @@ const downloadEntry = async (entry: RepositoryEntry) => {
         :to="childPath(entry)"
       >
         <Folder class="h-5 w-5 text-blue-600" />
-        <span class="truncate font-medium">{{ entry.name }}</span>
+        <span class="entry-text">
+          <span class="truncate font-medium">{{ entry.name }}</span>
+        </span>
       </router-link>
 
       <a
@@ -126,7 +128,10 @@ const downloadEntry = async (entry: RepositoryEntry) => {
         rel="noreferrer"
       >
         <FileArchive class="h-5 w-5 text-teal-700" />
-        <span class="truncate font-medium">{{ entry.name }}</span>
+        <span class="entry-text">
+          <span class="truncate font-medium">{{ entry.name }}</span>
+          <span class="entry-meta sm:hidden">{{ formatSize(entry.size) }}<template v-if="entry.updatedAt"> - {{ formatDate(entry.updatedAt) }}</template></span>
+        </span>
       </a>
 
       <span class="hidden text-right text-xs text-gray-500 dark:text-gray-400 sm:block">{{ entry.type === 'DIRECTORY' ? '' : formatSize(entry.size) }}</span>
@@ -156,10 +161,10 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-height: 3.5rem;
   border-bottom: 1px solid rgb(229 231 235);
-  padding: 0.55rem 0.75rem;
+  padding: 0.65rem 0.7rem;
 }
 
 @media (min-width: 640px) {
@@ -186,16 +191,37 @@ const downloadEntry = async (entry: RepositoryEntry) => {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   color: inherit;
   overflow: hidden;
+}
+
+.entry-main svg {
+  flex-shrink: 0;
+}
+
+.entry-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.entry-text .truncate {
+  display: block;
+}
+
+.entry-meta {
+  margin-top: 0.1rem;
+  color: rgb(107 114 128);
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
 .entry-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .dark .entry-row {
@@ -204,5 +230,9 @@ const downloadEntry = async (entry: RepositoryEntry) => {
 
 .dark .entry-row:hover {
   background: rgb(17 24 39);
+}
+
+.dark .entry-meta {
+  color: rgb(156 163 175);
 }
 </style>
