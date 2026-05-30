@@ -153,7 +153,7 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
 
 const highlightedCode = computed(() => {
   const code = snippet.value;
-  const lang = selected.value === "Maven" ? "xml" : selected.value === "Gradle Kotlin" ? "kotlin" : "groovy";
+  const lang = selected.value === "Maven" ? "xml" : selected.value === "Gradle Kotlin" ? "kotlin" : "gradle";
   try {
     return hljs.highlight(code, { language: lang }).value;
   } catch {
