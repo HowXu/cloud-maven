@@ -80,6 +80,8 @@ cloud-maven
 
 在 `wrangler.toml`（或通过 Dashboard）中填入 KV namespace id。**不要将 `ADMIN_BOOTSTRAP_TOKEN` 写入配置文件**，它将通过 Secret 设置。
 
+如果没有特别指定的kv和bucket，这个配置项可以无视，Cloudflare会自动创建kv和r2 bucket。
+
 ```toml
 [[kv_namespaces]]
 binding = "MAVEN_KV"
