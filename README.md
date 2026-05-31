@@ -56,7 +56,7 @@ cloud-maven
     │   ├── composables/   # useSession、useRepository、useMavenMetadata
     │   ├── pages/         # IndexPage、AdminPage、SettingsPage
     │   └── components/    # Header、FileBrowser、TokenEditor、DeleteModal
-    └── dist/             # 前端构建产物（部署到 Worker）
+    └── dist/              # 前端构建产物（部署到 Worker）
 ```
 
 ## 部署指南
