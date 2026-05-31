@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { AlignJustify, Github, LogOut, Moon, Sun, X } from "lucide-vue-next";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 
 import LoginModal from "@/components/header/LoginModal.vue";
-import { settingsApi } from "@/api/settings";
 import { siteConfig } from "@/site.config";
 import { useSession } from "@/composables/useSession";
+import { useSettings } from "@/composables/useSettings";
 import { useTheme } from "@/composables/useTheme";
 
 defineEmits<{
@@ -14,8 +14,8 @@ defineEmits<{
 
 const { isDark, toggleTheme } = useTheme();
 const { details, isLogged, logout } = useSession();
+const { title: siteTitle } = useSettings();
 const menuOpen = ref(false);
-const siteTitle = ref("Cloud Maven");
 
 const toggleThemeFromMenu = () => {
   toggleTheme();
@@ -26,15 +26,6 @@ const logoutFromMenu = () => {
   logout();
   menuOpen.value = false;
 };
-
-onMounted(async () => {
-  try {
-    const response = await settingsApi.get();
-    siteTitle.value = response.data.title || "Cloud Maven";
-  } catch {
-    // keep default
-  }
-});
 </script>
 
 <template>

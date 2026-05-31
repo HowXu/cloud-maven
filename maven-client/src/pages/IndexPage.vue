@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from "vue";
+import { computed, ref, watchEffect } from "vue";
 
 import AdminPage from "@/pages/AdminPage.vue";
 import SettingsPage from "@/pages/SettingsPage.vue";
 import FileBrowserView from "@/components/browser/FileBrowserView.vue";
 import DefaultHeader from "@/components/header/DefaultHeader.vue";
 import IntroCard from "@/components/common/IntroCard.vue";
-import { settingsApi } from "@/api/settings";
 import { siteConfig } from "@/site.config";
 import { useSession } from "@/composables/useSession";
-import { applySiteSettings } from "@/site.config";
+import { useSettings } from "@/composables/useSettings";
 
 type TabName = "Directory" | "Admin" | "Settings";
 
 const selectedTab = ref<TabName>((localStorage.getItem("cloud-maven-tab") as TabName) || "Directory");
 const { isManager, isLogged } = useSession();
-const defaultRepo = ref("");
+const { defaultRepo } = useSettings();
 
 const visibleTabs = computed<TabName[]>(() => {
   const tabs: TabName[] = ["Directory"];
@@ -40,16 +39,6 @@ watchEffect(() => {
 });
 
 const siteData = siteConfig;
-
-onMounted(async () => {
-  try {
-    const response = await settingsApi.get();
-    defaultRepo.value = response.data.defaultRepository || "";
-    applySiteSettings({ title: response.data.title });
-  } catch {
-    // ignore
-  }
-});
 </script>
 
 <template>

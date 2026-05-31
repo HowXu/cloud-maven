@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, Database, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-vue-next";
+import { Copy, KeyRound, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-vue-next";
 import { createToast } from "mosha-vue-toastify";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
@@ -8,11 +8,10 @@ import LoginModal from "@/components/header/LoginModal.vue";
 import TokenEditorModal from "@/components/admin/TokenEditorModal.vue";
 import { useClipboardToast } from "@/composables/useClipboardToast";
 import { useSession } from "@/composables/useSession";
-import type { AccessPermission, AdminStats } from "@/types";
+import type { AccessPermission } from "@/types";
 
 const { isManager, isLogged, details } = useSession();
 const { copy } = useClipboardToast();
-const stats = ref<AdminStats | null>(null);
 const tokens = ref<AccessTokenSummary[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -61,13 +60,7 @@ const loadAdminData = async () => {
   error.value = null;
 
   try {
-    const [statsResponse, tokensResponse] = await Promise.all([
-      adminApi.stats(),
-      adminApi.tokens(),
-    ]);
-
-    stats.value = statsResponse.data;
-    tokens.value = tokensResponse.data;
+    tokens.value = (await adminApi.tokens()).data;
   } catch {
     error.value = "Admin data is not available yet.";
   } finally {
@@ -267,26 +260,16 @@ watch(isManager, loadAdminData);
       <p v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">Loading admin data...</p>
       <p v-if="error" class="mb-4 text-sm text-amber-700 dark:text-amber-300">{{ error }}</p>
 
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
-          <Database class="mb-4 h-5 w-5 text-blue-600" />
-          <p class="muted-label">Repositories</p>
-          <strong class="mt-2 block text-2xl">{{ stats?.repositories ?? "-" }}</strong>
-        </article>
-        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
-          <Database class="mb-4 h-5 w-5 text-teal-700" />
-          <p class="muted-label">Objects</p>
-          <strong class="mt-2 block text-2xl">{{ stats?.objects ?? "-" }}</strong>
-        </article>
-        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
-          <ShieldCheck class="mb-4 h-5 w-5 text-amber-600" />
-          <p class="muted-label">Requests 24h</p>
-          <strong class="mt-2 block text-2xl">{{ stats?.requests24h ?? "-" }}</strong>
-        </article>
+      <div class="grid gap-4 sm:grid-cols-2">
         <article class="panel-surface lift rounded-lg p-4 sm:p-5">
           <KeyRound class="mb-4 h-5 w-5 text-blue-600" />
           <p class="muted-label">Tokens</p>
           <strong class="mt-2 block text-2xl">{{ tokenCount || "-" }}</strong>
+        </article>
+        <article class="panel-surface lift rounded-lg p-4 sm:p-5">
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            Request analytics are available in <strong>Cloudflare Dashboard &rarr; Workers &amp; Pages &rarr; your Worker &rarr; Analytics</strong>, including request volume, error rate, and CPU time &mdash; no code needed.
+          </p>
         </article>
       </div>
 

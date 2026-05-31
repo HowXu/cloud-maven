@@ -53,20 +53,17 @@ export const adminRoutes = new Hono<AppEnv>()
 adminRoutes.get('/stats', authManager, async (c) => {
   const kv = c.env.MAVEN_KV
   const bucket = c.env.MAVEN_BUCKET
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
 
-  const [reqsRaw, errsRaw, objectStats] = await Promise.all([
-    kv?.get(`stats:daily:${today}:requests`),
-    kv?.get(`stats:daily:${today}:errors`),
-    kv && bucket ? summarizeObjects(bucket) : Promise.resolve({ objects: 0, storageBytes: 0, truncated: false }),
-  ])
+  const objectStats = kv && bucket
+    ? await summarizeObjects(bucket)
+    : { objects: 0, storageBytes: 0, truncated: false }
 
   return jsonData(c, {
     repositories: 1,
     objects: objectStats.objects,
     storageBytes: objectStats.storageBytes,
-    requests24h: Number(reqsRaw) || 0,
-    errors24h: Number(errsRaw) || 0,
+    requests24h: 0,
+    errors24h: 0,
   })
 })
 

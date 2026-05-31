@@ -30,10 +30,6 @@ function serveStaticAsset(c: Context<AppEnv>): Response | Promise<Response> {
   return c.env.ASSETS.fetch(c.req.raw)
 }
 
-function isStaticAssetPath(path: string): boolean {
-  return path === '/' || path === '/index.html' || path.startsWith('/assets/')
-}
-
 app.use('*', async (c: Context<AppEnv>, next: Next) => {
   const requestId = crypto.randomUUID()
   c.set('requestId', requestId)
@@ -72,18 +68,6 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
   c.header('X-Request-Id', requestId)
   c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src * data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'")
 
-  if (isStaticAssetPath(c.req.path)) return
-
-  c.executionCtx.waitUntil(
-    (async () => {
-      if (!c.env.MAVEN_KV) return undefined
-      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      const key = `stats:daily:${today}:requests`
-      const current = await c.env.MAVEN_KV.get(key)
-      await c.env.MAVEN_KV.put(key, String((Number(current) || 0) + 1))
-      return undefined
-    })()
-  )
 })
 
 app.get('/api/status/health', (c) => {
@@ -121,19 +105,6 @@ app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)
 
 app.onError((error, c) => {
-  const kv = c.env.MAVEN_KV
-  if (kv) {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    c.executionCtx.waitUntil(
-      (async () => {
-        const key = `stats:daily:${today}:errors`
-        const current = await kv.get(key)
-        await kv.put(key, String((Number(current) || 0) + 1))
-        return undefined
-      })()
-    )
-  }
-
   return jsonError(c, toAppError(error))
 })
 

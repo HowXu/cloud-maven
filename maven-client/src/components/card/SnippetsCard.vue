@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Copy } from "lucide-vue-next";
-import { computed, ref, watch, onMounted } from "vue";
+import { computed, ref, watch } from "vue";
 import hljs from "highlight.js";
 
 import { createArtifactUrl } from "@/api/client";
 import { mavenApi } from "@/api/maven";
-import { settingsApi } from "@/api/settings";
 import { useClipboardToast } from "@/composables/useClipboardToast";
+import { useSettings } from "@/composables/useSettings";
 import {
   type ArtifactCoordinates,
   type MavenMetadata,
@@ -37,7 +37,7 @@ const metadataNote = ref("");
 let metadataRequestId = 0;
 
 const repositoryId = computed(() => props.repositoryId || "Cloud Maven");
-const baseUrl = ref("");
+const { baseUrl } = useSettings();
 const repositoryUrl = computed(() => {
   if (baseUrl.value) return baseUrl.value;
   const prefix = import.meta.env.VITE_API_BASE_URL || "";
@@ -137,15 +137,6 @@ watch(
   },
   { immediate: true },
 );
-
-onMounted(async () => {
-  try {
-    const response = await settingsApi.get();
-    baseUrl.value = response.data.baseUrl || "";
-  } catch {
-    // keep fallback
-  }
-});
 
 const selectTab = (tab: (typeof snippetTabs)[number]) => {
   selected.value = tab;
