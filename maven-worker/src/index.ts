@@ -3,12 +3,27 @@ import type { Context, Next } from 'hono'
 import type { AppEnv } from './env'
 import { jsonData, jsonError, notFound, toAppError } from './shared'
 import { ensureAdminToken } from './tokens'
+import { getSettings } from './config'
 import { authApiRoutes } from './auth'
 import { adminRoutes } from './admin'
 import { mavenApiRoutes, handleFileGet, handleFileHead, handleFilePut, handleFileDelete } from './maven'
 
 const app = new Hono<AppEnv>()
 let adminBootstrapChecked = false
+
+let corsOriginsCache: string[] | null = null
+let corsOriginsCacheTime = 0
+const CORS_CACHE_TTL = 60_000
+
+async function getAllowedCorsOrigins(kv?: KVNamespace): Promise<string[]> {
+  if (corsOriginsCache && Date.now() - corsOriginsCacheTime < CORS_CACHE_TTL) {
+    return corsOriginsCache
+  }
+  const settings = await getSettings(kv)
+  corsOriginsCache = settings.allowedCorsOrigins
+  corsOriginsCacheTime = Date.now()
+  return corsOriginsCache
+}
 
 function serveStaticAsset(c: Context<AppEnv>): Response | Promise<Response> {
   if (!c.env.ASSETS) return c.notFound()
@@ -25,11 +40,16 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
 
   const origin = c.req.header('Origin')
   if (origin) {
-    c.header('Access-Control-Allow-Origin', origin)
-    c.header('Access-Control-Allow-Methods', 'GET, HEAD, PUT, POST, DELETE, OPTIONS')
-    c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Generate-Checksums')
-    c.header('Access-Control-Allow-Credentials', 'true')
-    c.header('Access-Control-Max-Age', '86400')
+    const allowedOrigins = await getAllowedCorsOrigins(c.env.MAVEN_KV)
+
+    if (allowedOrigins.includes(origin)) {
+      c.header('Access-Control-Allow-Origin', origin)
+      c.header('Access-Control-Allow-Methods', 'GET, HEAD, PUT, POST, DELETE, OPTIONS')
+      c.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Generate-Checksums')
+      c.header('Access-Control-Allow-Credentials', 'true')
+      c.header('Access-Control-Max-Age', '86400')
+    }
+    c.header('Vary', 'Origin')
   }
 
   if (c.req.method === 'OPTIONS') {
@@ -46,6 +66,7 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
   await next()
 
   c.header('X-Request-Id', requestId)
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
 
   if (isStaticAssetPath(c.req.path)) return
 

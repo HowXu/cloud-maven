@@ -3,9 +3,9 @@ import type { Context } from 'hono'
 import type { AccessPermission, AppEnv, TokenInfo } from '../env'
 import { parseToken } from '../auth'
 import { hasPermission } from '../tokens'
-import { getRepositoryPolicy } from '../config'
+import { getRepositoryPolicy, getSettings } from '../config'
 import { getObject, headObject, putObject, deleteObject, listObjects, deleteObjectsByPrefix } from '../storage'
-import { badRequest, conflict, forbidden, jsonData, notFound, unauthorized } from '../shared'
+import { badRequest, conflict, forbidden, jsonData, notFound, payloadTooLarge, unauthorized } from '../shared'
 import {
   getContentType,
   getCacheControl,
@@ -346,6 +346,14 @@ async function doFilePut(c: Context<AppEnv>, mavenPath: string): Promise<Respons
   let checksums: Record<string, string> = {}
 
   if (wantsChecksums) {
+    const contentLength = c.req.header('Content-Length')
+    if (contentLength) {
+      const settings = await getSettings(c.env.MAVEN_KV)
+      if (settings.maxChecksumUploadSize > 0 && Number(contentLength) > settings.maxChecksumUploadSize) {
+        throw payloadTooLarge(`Upload exceeds max checksum upload size (${settings.maxChecksumUploadSize} bytes)`)
+      }
+    }
+
     const arrayBuffer = await c.req.raw.arrayBuffer()
     obj = await putObject(c.env.MAVEN_BUCKET, mavenPath, arrayBuffer, {
       httpMetadata: { contentType },
@@ -554,20 +562,24 @@ async function details(c: Context<AppEnv>): Promise<Response> {
     permissions: { read: boolean; write: boolean; delete: boolean }
   }> = []
 
-  for (const prefix of result.delimitedPrefixes) {
-    const dirPath = prefix.slice(0, -1)
+  for (const pref of result.delimitedPrefixes) {
+    const dirPath = pref.slice(0, -1)
     const dirName = dirPath.split('/').pop() ?? dirPath
+    const perms = checkPerms(tokenPerms, dirPath, isPublicRead)
+    if (!isPublicRead && !perms.read) continue
     entries.push({
       name: dirName,
       path: dirPath,
       type: 'DIRECTORY',
-      permissions: checkPerms(tokenPerms, dirPath, isPublicRead),
+      permissions: perms,
     })
   }
 
   for (const obj of result.objects) {
     const objName = obj.key.split('/').pop() ?? obj.key
     if (!objName) continue
+    const perms = checkPerms(tokenPerms, obj.key, isPublicRead)
+    if (!isPublicRead && !perms.read) continue
     entries.push({
       name: objName,
       path: obj.key,
@@ -575,7 +587,7 @@ async function details(c: Context<AppEnv>): Promise<Response> {
       size: obj.size,
       updatedAt: obj.uploaded.toISOString(),
       contentType: obj.httpMetadata?.contentType ?? getContentType(obj.key),
-      permissions: checkPerms(tokenPerms, obj.key, isPublicRead),
+      permissions: perms,
     })
   }
 

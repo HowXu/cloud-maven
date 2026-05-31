@@ -20,6 +20,8 @@ const form = reactive<ClientSettings>({
   allowOverwrite: false,
   generateChecksums: true,
   maintainMetadata: true,
+  allowedCorsOrigins: [],
+  maxChecksumUploadSize: 52428800,
 });
 
 const loadSettings = async () => {

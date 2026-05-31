@@ -27,7 +27,7 @@ head_sampling_rate = 1
 
 [vars]
 SESSION_TTL_SECONDS = "86400"
-DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'
+DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
 
 # Set with: wrangler secret put ADMIN_BOOTSTRAP_TOKEN
 
@@ -44,7 +44,7 @@ id = "cd93fa4530444160a19ccd88d709cac0"
 
 [env.staging.vars]
 SESSION_TTL_SECONDS = "86400"
-DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'
+DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
 
 [env.production]
 name = "cloud-maven-worker"
@@ -59,4 +59,4 @@ bucket_name = ""
 
 [env.production.vars]
 SESSION_TTL_SECONDS = "86400"
-DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowReleaseRedeploy":false,"allowSnapshotRedeploy":true}'
+DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'

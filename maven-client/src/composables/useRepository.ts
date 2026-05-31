@@ -6,6 +6,10 @@ import type { RepositoryDetails } from "@/types";
 
 const cache = new Map<string, RepositoryDetails>();
 
+export function clearRepositoryCache() {
+  cache.clear();
+}
+
 export function useRepository() {
   const details = ref<RepositoryDetails | null>(null);
   const loading = ref(false);

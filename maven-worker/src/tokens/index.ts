@@ -1,5 +1,5 @@
 import type { AccessToken, AccessPermission, AccessSession } from '../env'
-import { conflict, forbidden, internalError, notFound } from '../shared'
+import { badRequest, conflict, forbidden, internalError, notFound } from '../shared'
 
 const KV_PREFIX_TOKEN = 'token:'
 const KV_PREFIX_TOKEN_NAME = 'token-name:'
@@ -129,7 +129,25 @@ export async function updateToken(
   const token = await getToken(kv, id)
   if (!token) throw notFound('Token not found')
 
+  const isManager = token.permissions.some(p => p.actions.includes('manage'))
+  const wouldLoseManage = patch.permissions ? !patch.permissions.some(p => p.actions.includes('manage')) : false
+  const wouldBeDisabled = patch.disabled === true
+
+  if (isManager && (wouldLoseManage || wouldBeDisabled)) {
+    const tokens = await listTokens(kv)
+    const otherEnabledManagers = tokens.filter(t =>
+      t.id !== id &&
+      !t.disabled &&
+      t.permissions.some(p => p.actions.includes('manage'))
+    )
+    if (otherEnabledManagers.length === 0) {
+      throw forbidden('Cannot remove or disable the last enabled manager token')
+    }
+  }
+
   if (patch.name && patch.name !== token.name) {
+    if (!/^[A-Za-z0-9_.-]+$/.test(patch.name)) throw badRequest('Token name contains unsupported characters')
+    if (patch.name.length > 128) throw badRequest('Token name must not exceed 128 characters')
     const existingByName = await kv.get(`${KV_PREFIX_TOKEN_NAME}${patch.name}`)
     if (existingByName && existingByName !== id) {
       throw conflict(`Token "${patch.name}" already exists`)

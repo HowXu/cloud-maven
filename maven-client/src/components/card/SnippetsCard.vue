@@ -151,13 +151,15 @@ const selectTab = (tab: (typeof snippetTabs)[number]) => {
   selected.value = tab;
 };
 
+const escapeHtml = (str: string) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 const highlightedCode = computed(() => {
   const code = snippet.value;
   const lang = selected.value === "Maven" ? "xml" : selected.value === "Gradle Kotlin" ? "kotlin" : "gradle";
   try {
     return hljs.highlight(code, { language: lang }).value;
   } catch {
-    return code;
+    return escapeHtml(code);
   }
 });
 </script>

@@ -443,4 +443,67 @@ describe('Worker Maven routes', () => {
 
     expect(anonymous.status).toBe(401)
   })
+
+  it('does not set CORS headers when origin is not in allowed list', async () => {
+    const authHeaders = await createAuthHeader()
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...authHeaders,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ allowedCorsOrigins: ['https://trusted.example.com'] }),
+    })
+    expect(response.status).toBe(200)
+
+    const corsResponse = await SELF.fetch(requestUrl('/api/status/health'), {
+      headers: { Origin: 'https://evil.example.com' },
+    })
+
+    expect(corsResponse.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    expect(corsResponse.headers.get('Vary')).toBe('Origin')
+  })
+
+  it('sets CORS headers when origin is in allowed list', async () => {
+    const allowed = 'https://trusted.example.com'
+    const authHeaders = await createAuthHeader()
+    await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allowedCorsOrigins: [allowed] }),
+    })
+
+    const corsResponse = await SELF.fetch(requestUrl('/api/status/health'), {
+      headers: { Origin: allowed },
+    })
+
+    expect(corsResponse.headers.get('Access-Control-Allow-Origin')).toBe(allowed)
+    expect(corsResponse.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    expect(corsResponse.headers.get('Access-Control-Allow-Methods')).toContain('GET')
+  })
+
+  it('returns CSP header on non-static-asset responses', async () => {
+    const response = await SELF.fetch(requestUrl('/api/maven/details/releases/com/example'))
+    const csp = response.headers.get('Content-Security-Policy')
+    expect(csp).toContain("default-src 'self'")
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'")
+  })
+
+  it('handles OPTIONS preflight with 204 when origin matches', async () => {
+    const allowed = 'https://trusted.example.com'
+    const authHeaders = await createAuthHeader()
+    await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allowedCorsOrigins: [allowed] }),
+    })
+
+    const preflight = await SELF.fetch(requestUrl('/api/status/health'), {
+      method: 'OPTIONS',
+      headers: { Origin: allowed },
+    })
+
+    expect(preflight.status).toBe(204)
+    expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(allowed)
+  })
 })

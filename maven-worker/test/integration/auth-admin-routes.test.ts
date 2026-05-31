@@ -169,7 +169,6 @@ describe('Worker auth and admin routes', () => {
 
   it('rotates token secret via PUT /api/admin/tokens/:id', async () => {
     const { headers } = await createAuthHeader()
-    const { secret: originalSecret } = await createAuthHeader()
 
     const created = await SELF.fetch(requestUrl('/api/admin/tokens'), {
       method: 'POST',
@@ -184,7 +183,6 @@ describe('Worker auth and admin routes', () => {
     })
     const createdBody = await created.json() as { id: string; secret: string }
 
-    const newSecret = `new-secret-${crypto.randomUUID()}`
     const updated = await SELF.fetch(requestUrl(`/api/admin/tokens/${createdBody.id}`), {
       method: 'PUT',
       headers: {
@@ -192,13 +190,13 @@ describe('Worker auth and admin routes', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        secret: newSecret,
+        resetSecret: true,
       }),
     })
 
     expect(updated.status).toBe(200)
     const updatedBody = await updated.json() as { secret: string }
-    expect(updatedBody.secret).toBe(newSecret)
+    expect(updatedBody.secret.length).toBeGreaterThan(20)
     expect(updatedBody.secret).not.toBe(createdBody.secret)
   })
 
@@ -385,5 +383,230 @@ describe('Worker auth and admin routes', () => {
     expect(body.storageBytes).toBeGreaterThanOrEqual(6)
     expect(body.requests24h).toBeGreaterThanOrEqual(0)
     expect(body.errors24h).toBeGreaterThanOrEqual(0)
+  })
+
+  it('rejects token creation with empty name', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/tokens'), {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: '',
+        permissions: [{ path: '/', actions: ['read'] }],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Token name is required',
+    })
+  })
+
+  it('rejects token creation with name containing unsupported characters', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/tokens'), {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: `bad name-${crypto.randomUUID()}`,
+        permissions: [{ path: '/', actions: ['read'] }],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Token name contains unsupported characters',
+    })
+  })
+
+  it('rejects token creation with name containing slash', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/tokens'), {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'path/token',
+        permissions: [{ path: '/', actions: ['read'] }],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Token name contains unsupported characters',
+    })
+  })
+
+  it('rejects token creation with name exceeding 128 characters', async () => {
+    const { headers } = await createAuthHeader()
+    const longName = 'a'.repeat(129)
+
+    const response = await SELF.fetch(requestUrl('/api/admin/tokens'), {
+      method: 'POST',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: longName,
+        permissions: [{ path: '/', actions: ['read'] }],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'Token name must not exceed 128 characters',
+    })
+  })
+
+  it('rejects settings update with title exceeding 100 characters', async () => {
+    const { headers } = await createAuthHeader()
+    const longTitle = 'A'.repeat(101)
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title: longTitle }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'title must not exceed 100 characters',
+    })
+  })
+
+  it('rejects settings update with baseUrl exceeding 500 characters', async () => {
+    const { headers } = await createAuthHeader()
+    const longUrl = `https://${'a'.repeat(490)}.com`
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ baseUrl: longUrl }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'baseUrl must not exceed 500 characters',
+    })
+  })
+
+  it('rejects settings update with defaultRepository exceeding 100 characters', async () => {
+    const { headers } = await createAuthHeader()
+    const longRepo = 'x'.repeat(101)
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ defaultRepository: longRepo }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'defaultRepository must not exceed 100 characters',
+    })
+  })
+
+  it('rejects settings update with invalid allowedCorsOrigins format', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        allowedCorsOrigins: ['not-a-valid-origin'],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'allowedCorsOrigins must be valid origins (e.g. https://example.com)',
+    })
+  })
+
+  it('rejects settings update with allowedCorsOrigins not starting with http', async () => {
+    const { headers } = await createAuthHeader()
+
+    const response = await SELF.fetch(requestUrl('/api/admin/settings'), {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        allowedCorsOrigins: ['ftp://example.com'],
+      }),
+    })
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'allowedCorsOrigins must be valid origins (e.g. https://example.com)',
+    })
+  })
+
+  it('rejects login with wrong credentials and enforces rate limiting after failures', async () => {
+    const { token, secret } = await createAuthHeader()
+
+    for (let i = 0; i < 5; i++) {
+      const fail = await SELF.fetch(requestUrl('/api/auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: token.name, secret: 'wrong-secret' }),
+      })
+      expect(fail.status).toBe(401)
+    }
+
+    const locked = await SELF.fetch(requestUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: token.name, secret }),
+    })
+
+    expect(locked.status).toBe(429)
+    await expect(locked.json()).resolves.toMatchObject({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Account temporarily locked due to too many failed attempts',
+    })
+  })
+
+  it('returns CSP header in responses', async () => {
+    const response = await SELF.fetch(requestUrl('/api/status/health'))
+
+    expect(response.status).toBe(200)
+    const csp = response.headers.get('Content-Security-Policy')
+    expect(csp).toContain("default-src 'self'")
+    expect(csp).toContain("script-src 'self'")
   })
 })

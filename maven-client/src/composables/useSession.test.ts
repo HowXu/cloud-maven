@@ -2,12 +2,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SessionDetails } from "@/types";
 
+const mockSetAuthorization = vi.fn();
+
 vi.mock("@/api/client", () => ({
   apiClient: {
     defaults: { headers: { common: {} } },
     delete: vi.fn(),
   },
-  setAuthorization: vi.fn(),
+  setAuthorization: mockSetAuthorization,
+}));
+
+vi.mock("@/api/auth", () => ({
+  authApi: {
+    me: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
+  },
 }));
 
 vi.mock("mosha-vue-toastify", () => ({
@@ -21,14 +31,17 @@ const managerSession: SessionDetails = {
 };
 
 describe("useSession", () => {
+  let localStorageStore: Record<string, string>;
+
   beforeEach(() => {
-    const store: Record<string, string> = {};
+    localStorageStore = {};
     vi.stubGlobal("localStorage", {
-      getItem: (key: string) => store[key] ?? null,
-      setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { Object.keys(store).forEach((k) => delete store[k]); },
+      getItem: (key: string) => localStorageStore[key] ?? null,
+      setItem: (key: string, value: string) => { localStorageStore[key] = value; },
+      removeItem: (key: string) => { delete localStorageStore[key]; },
+      clear: () => { Object.keys(localStorageStore).forEach((k) => delete localStorageStore[k]); },
     });
+    mockSetAuthorization.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -138,6 +151,114 @@ describe("useSession", () => {
       };
 
       expect(session.can("/private/path", "read")).toBe(false);
+    });
+
+    it("matches root permission for any subpath", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "reader" },
+        roles: [],
+        permissions: [{ path: "/", actions: ["read"] }],
+      };
+
+      expect(session.can("/com/example/demo.jar", "read")).toBe(true);
+      expect(session.can("/releases/lib/core", "read")).toBe(true);
+    });
+
+    it("root path permission does not grant write when not in actions", async () => {
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = {
+        token: { id: "token-1", name: "reader" },
+        roles: [],
+        permissions: [{ path: "/", actions: ["read"] }],
+      };
+
+      expect(session.can("/com/example/demo.jar", "write")).toBe(false);
+    });
+  });
+
+  describe("token storage security", () => {
+    it("does not store token in localStorage after login", async () => {
+      const { authApi } = await import("@/api/auth");
+      vi.mocked(authApi.login).mockResolvedValueOnce({ data: managerSession } as never);
+
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      await session.login("admin", "secret123");
+
+      expect(localStorageStore["cloud-maven-token-name"]).toBeUndefined();
+      expect(localStorageStore["cloud-maven-token-secret"]).toBeUndefined();
+    });
+
+    it("sets authorization header after login", async () => {
+      const { authApi } = await import("@/api/auth");
+      vi.mocked(authApi.login).mockResolvedValueOnce({ data: managerSession } as never);
+
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      await session.login("admin", "secret123");
+
+      expect(mockSetAuthorization).toHaveBeenCalledWith("admin", "secret123");
+    });
+
+    it("clears token memory state on logout", async () => {
+      const { authApi } = await import("@/api/auth");
+      vi.mocked(authApi.logout).mockResolvedValueOnce(undefined as never);
+
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = managerSession;
+
+      await session.logout();
+
+      expect(session.details.value).toBeNull();
+      expect(session.isLogged.value).toBe(false);
+    });
+
+    it("removes legacy localStorage tokens on logout", async () => {
+      const { authApi } = await import("@/api/auth");
+      vi.mocked(authApi.logout).mockResolvedValueOnce(undefined as never);
+
+      localStorage.setItem("cloud-maven-token-name", "old-name");
+      localStorage.setItem("cloud-maven-token-secret", "old-secret");
+
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = managerSession;
+
+      await session.logout();
+
+      expect(localStorageStore["cloud-maven-token-name"]).toBeUndefined();
+      expect(localStorageStore["cloud-maven-token-secret"]).toBeUndefined();
+    });
+
+    it("clears authorization header on logout", async () => {
+      const { authApi } = await import("@/api/auth");
+      const clientModule = await import("@/api/client");
+      vi.mocked(authApi.logout).mockResolvedValueOnce(undefined as never);
+
+      clientModule.apiClient.defaults.headers.common.Authorization = "xBasic dGVzdDp0ZXN0";
+
+      const { useSession } = await import("@/composables/useSession");
+      const session = useSession();
+      session.details.value = managerSession;
+
+      await session.logout();
+
+      expect(clientModule.apiClient.defaults.headers.common.Authorization).toBeUndefined();
+    });
+
+    it("preserves token in memory across composable calls within same session", async () => {
+      const { useSession: useSession1 } = await import("@/composables/useSession");
+      const session1 = useSession1();
+      session1.details.value = managerSession;
+
+      const { useSession: useSession2 } = await import("@/composables/useSession");
+      const session2 = useSession2();
+
+      expect(session2.details.value).toEqual(managerSession);
     });
   });
 });

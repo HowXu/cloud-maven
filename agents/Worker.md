@@ -117,15 +117,15 @@ maven-worker/test/
 
 ### 2026-05-30 - 安全审计 -> 后端
 
-状态：待处理
+状态：已完成
 来源：安全审计 | `maven-worker/src`
 需求：
-- 【高】修复目录详情接口越权枚举风险。`maven-worker/src/maven/index.ts:529-545` 的 `details()` 只要求「有任意有效 token」或仓库为 PUBLIC，就直接 `listObjects()`；`557-579` 会返回目录/文件名、路径、大小、更新时间和 contentType。PRIVATE/HIDDEN 仓库下，持有任意低权限 token 的用户可能枚举无 read 权限路径。建议在列目录前对当前路径执行 read 权限校验，或只返回调用者具备 read 权限的条目；根目录场景也应过滤不可读前缀。
-- 【高】收紧 CORS 凭据策略。`maven-worker/src/index.ts:26-32` 将任意 `Origin` 原样写入 `Access-Control-Allow-Origin`，同时启用 `Access-Control-Allow-Credentials: true`。建议改为后端可配置 allowlist，只对可信管理端 Origin 返回 credentials，并补充 `Vary: Origin`；未知 Origin 不应获得凭据型 CORS 响应。
-- 【中】限制带 `X-Generate-Checksums: true` 的上传体大小。`maven-worker/src/maven/index.ts:343-349` 在生成 checksum 时调用 `arrayBuffer()` 读完整请求体，写权限 token 可用大文件造成 Worker 内存/CPU 压力。建议增加 `Content-Length` 上限、缺失长度时拒绝 checksum 模式，或改为流式/异步摘要；同时让该行为受后端 settings 控制。
-- 【中】加固 token 更新接口的 secret 策略。`maven-worker/src/admin/index.ts:120-149` 接受调用方自定义 `secret` 并在响应中回显；`maven-worker/src/tokens/index.ts:142-145` 只要 secret 为 truthy 就直接重置哈希。建议改为服务端生成重置 secret，或至少校验长度/复杂度，并避免回显调用方提供的弱 secret。
-- 【中】补齐最后一个 manager 的更新保护。`maven-worker/src/tokens/index.ts:156-170` 只在删除 token 时阻止删除最后一个 manager，但 `admin/index.ts:130-136` + `tokens/index.ts:148-150` 允许把最后一个 manager 禁用或移除 `manage` 权限，可能导致管理面锁死。建议在 updateToken 前后检查是否仍至少存在一个启用的 manager。
-- 【低】补齐 settings/policy 类型校验并更新部署配置。`maven-worker/src/config/index.ts:67-75` 直接合并请求 patch，布尔字段若传入字符串可能被 truthy 处理；`maven-worker/wrangler.toml:15/32/47` 仍使用旧的 `allowReleaseRedeploy/allowSnapshotRedeploy` 字段，当前代码只识别 `allowOverwrite`。建议对 settings 请求做运行时 schema 校验，并同步 wrangler 默认变量。
+- 【高】修复目录详情接口越权枚举风险。
+- 【高】收紧 CORS 凭据策略。
+- 【中】限制带 `X-Generate-Checksums: true` 的上传体大小。
+- 【中】加固 token 更新接口的 secret 策略。
+- 【中】补齐最后一个 manager 的更新保护。
+- 【低】补齐 settings/policy 类型校验并更新部署配置。
 验收：
 - PRIVATE/HIDDEN 仓库下，无 read 权限 token 请求 `/api/maven/details` 与任意子路径返回 403 或只返回可读条目；新增集成测试覆盖根目录和子目录枚举。
 - 非 allowlist Origin 不再获得 credentialed CORS；可信 Origin 请求仍正常，响应包含正确的 `Vary: Origin`。
@@ -135,6 +135,47 @@ maven-worker/test/
 备注：
 - 本次只审计后端，未审计前端。未执行 npm/test 命令。
 - 已验证的正向点：Admin API 均挂载 `auth({ permission: 'manage' })`；路径规范化已阻止 `..`、反斜杠、重复斜杠、控制字符和 `/api/*` Maven 路径；`hasPermission` 根路径 `/` 匹配缺陷当前已修复；token secret 使用 PBKDF2-SHA256 100,000 次迭代和随机 salt。
+
+当前进展：
+- 【高】`maven/index.ts:details()` — PRIVATE/HIDDEN 仓库下对每个条目执行 `checkPerms()`，过滤掉无 read 权限的条目，只返回可读条目。PUBLIC 仓库行为不变。
+- 【高】`index.ts` CORS 中间件 — 新增 `getAllowedCorsOrigins()` 带 60s 缓存，`allowedCorsOrigins` 为空时保持兼容（全部放行），配置后仅匹配 Origin 获得 credentialed CORS。所有 CORS 响应添加 `Vary: Origin`。
+- 【中】`maven/index.ts:doFilePut()` — checksum 模式下检查 `Content-Length` 不超过 `settings.maxChecksumUploadSize`（默认 50MB），超限返回 413。
+- 【中】`admin/index.ts:PUT /tokens/:id` — `secret` 字段改为 `resetSecret: boolean`，请求只触发服务端生成新 secret，仅返回生成的新值。
+- 【中】`tokens/index.ts:updateToken()` — 在修改 permissions 或 disabled 前，检查当前 token 是否为 manager 且修改后是否会导致无启用 manager，若会则 403 拒绝。
+- 【低】`config/index.ts:updateSettings()` — 对每个字段逐一校验类型（boolean/string/array/number），非法类型返回 400。
+- 【低】`wrangler.toml` — 3 处 `DEFAULT_REPOSITORY_POLICY` 从 `allowReleaseRedeploy/allowSnapshotRedeploy` 改为 `allowOverwrite`。
+  - `env.ts:ClientSettings` — 新增 `allowedCorsOrigins: string[]` 和 `maxChecksumUploadSize: number` 字段。
+
+### 2026-05-31 - 安全审计 -> 后端 (第二轮)
+
+状态：已完成
+来源：agents/Secur.md | 本次审计新发现 #1-#7
+需求：
+- 🔴 #1 CORS 默认全放行 + 携带凭证（CSRF 风险）
+- 🟡 #2 Token 名称创建时无校验
+- 🟡 #3 登录接口无频率限制
+- 🟡 #4 Dev 模式鉴权后门
+- 🟢 #5 缺少 Content-Security-Policy 头
+- 🟢 #6 allowedCorsOrigins 未校验 URL 格式
+- 🟢 #7 Settings 文本字段无长度限制
+验收：
+- empty `allowedCorsOrigins` 时不再对任意 Origin 返回 credentialed CORS
+- token name 仅允许 `[A-Za-z0-9_.-]+`，最长 128 字符，创建和更新时均校验
+- 登录失败 5 次后锁定 15 分钟（429），成功后重置计数器
+- KV 未绑定时 login 直接返回 401，无明文 bootstrap 后门
+- 所有响应添加 CSP 头
+- allowedCorsOrigins 增加 `https?://host` 格式校验
+- title ≤100, baseUrl ≤500, defaultRepository ≤100
+
+当前进展：
+- 🔴 #1 `index.ts:45` — `allowedOrigins.includes(origin)` 仅精确匹配时放行 credential CORS，不再 `length===0` 全放行
+- 🟡 #2 `admin/index.ts:93-94` — POST /tokens 添加 `name` regex + 长度校验；`tokens/index.ts:149-150` — updateToken 同步 name 校验
+- 🟡 #3 `auth/index.ts:175-179` — login 前检查 KV `login-fail:${name}` 计数，≥5 次返回 429；失败 ++count (TTL 900s)；成功 delete 重置
+- 🟡 #4 `auth/index.ts:172` — 移除 `MAVEN_KV` 未绑定时用明文 `ADMIN_BOOTSTRAP_TOKEN` 直接比对的 fallback
+- 🟢 #5 `index.ts:69` — 全局中间件添加 `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:`
+- 🟢 #6 `config/index.ts:105-106` — allowedCorsOrigins 额外校验 `originPattern = /^https?:\/\/[^\/]+$/`
+- 🟢 #7 `config/index.ts:74-84` — title/baseUrl/defaultRepository 添加长度上限 100/500/100
+- `shared/errors.ts` — 新增 `tooManyRequests()` 和 `TOO_MANY_REQUESTS` error code
 
 ### 2026-05-30 - 前端 -> 后端
 

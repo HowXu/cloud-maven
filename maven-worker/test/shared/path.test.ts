@@ -37,10 +37,50 @@ describe('Maven path normalization', () => {
     }
   })
 
+  it('rejects control characters in paths', () => {
+    const controlPaths = [
+      '\x00hidden',
+      'com/\x01/example',
+      'com\x7F/example',
+    ]
+
+    for (const path of controlPaths) {
+      expect(() => normalizeMavenPath(path)).toThrow(AppError)
+    }
+  })
+
+  it('rejects HTML meta-characters in paths', () => {
+    expect(() => normalizeMavenPath('<script>')).toThrow(AppError)
+    expect(() => normalizeMavenPath('com/example">')).toThrow(AppError)
+    expect(() => normalizeMavenPath("com/example'")).toThrow(AppError)
+  })
+
+  it('rejects paths with backslashes (Windows directory separator)', () => {
+    expect(() => normalizeMavenPath('com\\example\\demo')).toThrow(AppError)
+  })
+
+  it('rejects repeated slashes anywhere in path', () => {
+    expect(() => normalizeMavenPath('com//example')).toThrow(AppError)
+    expect(() => normalizeMavenPath('//com/example')).toThrow(AppError)
+  })
+
+  it('rejects paths containing single dot segment', () => {
+    expect(() => normalizeMavenPath('com/./example')).toThrow(AppError)
+  })
+
+  it('rejects empty string when root is not allowed', () => {
+    expect(() => normalizeMavenPath('')).toThrow(AppError)
+  })
+
   it('normalizes permission paths and permits reserved API paths for policy data', () => {
     expect(normalizePermissionPath('/')).toBe('/')
     expect(normalizePermissionPath('/com/example/')).toBe('/com/example')
     expect(normalizePermissionPath('/api/admin')).toBe('/api/admin')
+  })
+
+  it('normalizes root permission path correctly', () => {
+    expect(normalizePermissionPath('')).toBe('/')
+    expect(normalizePermissionPath('/')).toBe('/')
   })
 
   it('extracts parent paths and path names', () => {

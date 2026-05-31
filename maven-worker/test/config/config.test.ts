@@ -68,6 +68,8 @@ describe('config settings', () => {
     expect(settings.allowOverwrite).toBe(false)
     expect(settings.generateChecksums).toBe(false)
     expect(settings.maintainMetadata).toBe(false)
+    expect(settings.allowedCorsOrigins).toEqual([])
+    expect(settings.maxChecksumUploadSize).toBe(50 * 1024 * 1024)
   })
 
   it('persists and retrieves stored settings', async () => {
@@ -80,6 +82,8 @@ describe('config settings', () => {
       allowOverwrite: true,
       generateChecksums: true,
       maintainMetadata: true,
+      allowedCorsOrigins: ['https://example.com'],
+      maxChecksumUploadSize: 10 * 1024 * 1024,
     }
     await kv.put('config:settings', JSON.stringify(stored))
 
@@ -88,6 +92,8 @@ describe('config settings', () => {
     expect(settings.title).toBe('Custom Title')
     expect(settings.anonymousRead).toBe(false)
     expect(settings.allowOverwrite).toBe(true)
+    expect(settings.allowedCorsOrigins).toEqual(['https://example.com'])
+    expect(settings.maxChecksumUploadSize).toBe(10 * 1024 * 1024)
   })
 
   it('maps anonymousRead to visibility in policy', async () => {
@@ -100,6 +106,8 @@ describe('config settings', () => {
       allowOverwrite: false,
       generateChecksums: false,
       maintainMetadata: false,
+      allowedCorsOrigins: [],
+      maxChecksumUploadSize: 0,
     }))
 
     await updateSettings(kv, { anonymousRead: false })
@@ -115,5 +123,74 @@ describe('config settings', () => {
 
     const policy = await getRepositoryPolicy(kv)
     expect(policy.allowOverwrite).toBe(true)
+  })
+
+  it('rejects title longer than 100 characters', async () => {
+    const kv = mockKv()
+    const longTitle = 'A'.repeat(101)
+
+    await expect(updateSettings(kv, { title: longTitle })).rejects.toThrow('title must not exceed 100 characters')
+  })
+
+  it('rejects baseUrl longer than 500 characters', async () => {
+    const kv = mockKv()
+    const longUrl = `https://${'a'.repeat(490)}.com`
+
+    await expect(updateSettings(kv, { baseUrl: longUrl })).rejects.toThrow('baseUrl must not exceed 500 characters')
+  })
+
+  it('rejects defaultRepository longer than 100 characters', async () => {
+    const kv = mockKv()
+    const longRepo = 'x'.repeat(101)
+
+    await expect(updateSettings(kv, { defaultRepository: longRepo })).rejects.toThrow('defaultRepository must not exceed 100 characters')
+  })
+
+  it('accepts title at exactly 100 characters', async () => {
+    const kv = mockKv()
+    const title = 'A'.repeat(100)
+
+    const result = await updateSettings(kv, { title })
+    expect(result.title).toBe(title)
+  })
+
+  it('rejects allowedCorsOrigins with invalid URL format', async () => {
+    const kv = mockKv()
+
+    await expect(updateSettings(kv, { allowedCorsOrigins: ['not-a-valid-origin'] })).rejects.toThrow(
+      'allowedCorsOrigins must be valid origins (e.g. https://example.com)',
+    )
+  })
+
+  it('rejects allowedCorsOrigins with ftp protocol', async () => {
+    const kv = mockKv()
+
+    await expect(updateSettings(kv, { allowedCorsOrigins: ['ftp://example.com'] })).rejects.toThrow(
+      'allowedCorsOrigins must be valid origins (e.g. https://example.com)',
+    )
+  })
+
+  it('rejects allowedCorsOrigins with trailing path', async () => {
+    const kv = mockKv()
+
+    await expect(updateSettings(kv, { allowedCorsOrigins: ['https://example.com/path'] })).rejects.toThrow(
+      'allowedCorsOrigins must be valid origins (e.g. https://example.com)',
+    )
+  })
+
+  it('accepts allowedCorsOrigins with valid http and https origins', async () => {
+    const kv = mockKv()
+    const origins = ['https://example.com', 'http://localhost:5173']
+
+    const result = await updateSettings(kv, { allowedCorsOrigins: origins })
+    expect(result.allowedCorsOrigins).toEqual(origins)
+  })
+
+  it('rejects allowedCorsOrigins containing non-string element', async () => {
+    const kv = mockKv()
+
+    await expect(updateSettings(kv, { allowedCorsOrigins: [42 as unknown as string] })).rejects.toThrow(
+      'allowedCorsOrigins must be a string array',
+    )
   })
 })

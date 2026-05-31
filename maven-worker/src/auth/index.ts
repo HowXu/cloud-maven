@@ -3,7 +3,7 @@ import type { Context, Next } from 'hono'
 import type { AccessToken, AppEnv } from '../env'
 import { validateToken, hasPermission, createSession, deleteSession, getTokenBySession } from '../tokens'
 import { getRepositoryPolicy } from '../config'
-import { unauthorized, forbidden, jsonData, noContent } from '../shared'
+import { unauthorized, forbidden, jsonData, noContent, tooManyRequests } from '../shared'
 
 export function parseXBasicHeader(header: string): { name: string; secret: string } | null {
   if (!header) return null
@@ -169,21 +169,22 @@ authApiRoutes.post('/login', async (c) => {
   const body = await c.req.json<{ name?: string; secret?: string }>().catch(() => null)
   if (!body || !body.name || !body.secret) throw unauthorized()
 
-  if (!c.env.MAVEN_KV) {
-    if (body.name === 'admin' && body.secret === c.env.ADMIN_BOOTSTRAP_TOKEN) {
-      return jsonData(c, {
-        token: { id: 'dev', name: 'admin', description: 'Bootstrap administrator' },
-        roles: ['manager', 'publisher'],
-        permissions: [{ path: '/', actions: ['read', 'write', 'delete', 'manage'] }],
-        session: { token: 'dev-session', expiresAt: null },
-      })
-    }
-    throw unauthorized()
+  if (!c.env.MAVEN_KV) throw unauthorized()
+
+  const failKey = `login-fail:${body.name}`
+  const failCount = Number(await c.env.MAVEN_KV.get(failKey)) || 0
+  if (failCount >= 5) {
+    throw tooManyRequests('Account temporarily locked due to too many failed attempts')
   }
 
   const token = await validateToken(c.env.MAVEN_KV, body.name, body.secret, c.env.ADMIN_BOOTSTRAP_TOKEN)
-  if (!token) throw unauthorized()
+  if (!token) {
+    await c.env.MAVEN_KV.put(failKey, String(failCount + 1), { expirationTtl: 900 })
+    throw unauthorized()
+  }
   if (token.disabled) throw forbidden('Token is disabled')
+
+  await c.env.MAVEN_KV.delete(`login-fail:${body.name}`)
 
   const ttl = sessionTtlSeconds(c)
   const session = await createSession(c.env.MAVEN_KV, token, ttl)

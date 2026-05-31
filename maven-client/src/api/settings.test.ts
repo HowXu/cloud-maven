@@ -19,6 +19,8 @@ const defaultSettings: ClientSettings = {
   allowOverwrite: false,
   generateChecksums: false,
   maintainMetadata: false,
+  allowedCorsOrigins: [],
+  maxChecksumUploadSize: 0,
 };
 
 describe("settingsApi", () => {
@@ -54,6 +56,8 @@ describe("settingsApi", () => {
         allowOverwrite: true,
         generateChecksums: true,
         maintainMetadata: true,
+        allowedCorsOrigins: [],
+        maxChecksumUploadSize: 0,
       };
 
       settingsApi.update(settings);
@@ -79,6 +83,8 @@ describe("settingsApi", () => {
       expect(defaultSettings.title).toBe("Cloud Maven");
       expect(defaultSettings.anonymousRead).toBe(true);
       expect(defaultSettings.allowOverwrite).toBe(false);
+      expect(defaultSettings.allowedCorsOrigins).toEqual([]);
+      expect(defaultSettings.maxChecksumUploadSize).toBe(0);
     });
 
     it("allows partial initialization", () => {
@@ -90,6 +96,8 @@ describe("settingsApi", () => {
         allowOverwrite: false,
         generateChecksums: false,
         maintainMetadata: false,
+        allowedCorsOrigins: [],
+        maxChecksumUploadSize: 0,
       };
       expect(minimal.title).toBe("Minimal");
       expect(minimal.maintainMetadata).toBe(false);

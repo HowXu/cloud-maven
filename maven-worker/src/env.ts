@@ -37,6 +37,8 @@ export interface ClientSettings {
   allowOverwrite: boolean
   generateChecksums: boolean
   maintainMetadata: boolean
+  allowedCorsOrigins: string[]
+  maxChecksumUploadSize: number
 }
 
 export interface TokenInfo {

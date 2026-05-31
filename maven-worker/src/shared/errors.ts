@@ -7,6 +7,7 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'CONFLICT'
   | 'PAYLOAD_TOO_LARGE'
+  | 'TOO_MANY_REQUESTS'
   | 'INTERNAL_ERROR'
 
 export class AppError extends Error {
@@ -40,6 +41,9 @@ export const conflict = (message: string): AppError =>
 
 export const payloadTooLarge = (message: string): AppError =>
   new AppError('PAYLOAD_TOO_LARGE', message, 413)
+
+export const tooManyRequests = (message: string): AppError =>
+  new AppError('TOO_MANY_REQUESTS', message, 429)
 
 export const internalError = (message = 'Internal server error'): AppError =>
   new AppError('INTERNAL_ERROR', message, 500, false)

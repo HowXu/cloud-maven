@@ -50,6 +50,8 @@ const normalizePermissionPath = (path: string) => {
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 };
 
+const isValidTokenName = (name: string) => /^[A-Za-z0-9_.-]{1,128}$/.test(name);
+
 const loadAdminData = async () => {
   if (!isManager.value) {
     return;
@@ -78,6 +80,11 @@ const createToken = async () => {
 
   if (!name) {
     createToast("Token name is required", { type: "warning", position: "bottom-right" });
+    return;
+  }
+
+  if (!isValidTokenName(name)) {
+    createToast("Token name must be 1-128 characters: A-Z, a-z, 0-9, _, ., -", { type: "warning", position: "bottom-right" });
     return;
   }
 
@@ -131,8 +138,14 @@ const openCreate = () => {
 };
 
 const saveToken = async (data: { name: string; description: string; path: string; actions: AccessPermission["actions"] }) => {
-  if (!data.name.trim()) {
+  const name = data.name.trim();
+  if (!name) {
     createToast("Token name is required", { type: "warning", position: "bottom-right" });
+    return;
+  }
+
+  if (!isValidTokenName(name)) {
+    createToast("Token name must be 1-128 characters: A-Z, a-z, 0-9, _, ., -", { type: "warning", position: "bottom-right" });
     return;
   }
 

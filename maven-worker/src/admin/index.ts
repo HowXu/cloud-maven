@@ -91,6 +91,8 @@ adminRoutes.post('/tokens', authManager, async (c) => {
   }>().catch(() => null)
 
   if (!body || !body.name) throw badRequest('Token name is required')
+  if (!/^[A-Za-z0-9_.-]+$/.test(body.name)) throw badRequest('Token name contains unsupported characters')
+  if (body.name.length > 128) throw badRequest('Token name must not exceed 128 characters')
 
   const secret = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
 
@@ -122,18 +124,24 @@ adminRoutes.put('/tokens/:id', authManager, async (c) => {
     description?: string
     enabled?: boolean
     permissions?: Array<{ path: string; actions: string[] }>
-    secret?: string
+    resetSecret?: boolean
   }>().catch(() => null)
 
   if (!body) throw badRequest('Invalid request body')
 
-  const newSecret = body.secret
+  let newSecret: string | undefined
+  let secretToStore: string | undefined
+  if (body.resetSecret) {
+    newSecret = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+    secretToStore = newSecret
+  }
+
   const token = await updateToken(c.env.MAVEN_KV, id, {
     name: body.name,
     description: body.description,
     disabled: body.enabled !== undefined ? !body.enabled : undefined,
     permissions: body.permissions ? normalizePermissions(body.permissions) : undefined,
-    secret: body.secret,
+    secret: secretToStore,
   })
 
   const result: Record<string, unknown> = {
@@ -171,6 +179,8 @@ adminRoutes.get('/settings', authManager, async (c) => {
     allowOverwrite: policy.allowOverwrite,
     generateChecksums: settings.generateChecksums,
     maintainMetadata: settings.maintainMetadata,
+    allowedCorsOrigins: settings.allowedCorsOrigins,
+    maxChecksumUploadSize: settings.maxChecksumUploadSize,
   })
 })
 
@@ -183,6 +193,8 @@ adminRoutes.put('/settings', authManager, async (c) => {
     allowOverwrite?: boolean
     generateChecksums?: boolean
     maintainMetadata?: boolean
+    allowedCorsOrigins?: string[]
+    maxChecksumUploadSize?: number
   }>().catch(() => null)
 
   if (!body) throw badRequest('Invalid request body')
@@ -202,5 +214,7 @@ adminRoutes.put('/settings', authManager, async (c) => {
     allowOverwrite: policy.allowOverwrite,
     generateChecksums: settings.generateChecksums,
     maintainMetadata: settings.maintainMetadata,
+    allowedCorsOrigins: settings.allowedCorsOrigins,
+    maxChecksumUploadSize: settings.maxChecksumUploadSize,
   })
 })

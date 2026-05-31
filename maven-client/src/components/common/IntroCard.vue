@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <div class="intro-card">
     <div v-if="imageUrl" class="intro-image">
-      <img :src="imageUrl" :alt="title || 'Repository introduction'" />
+      <img :src="imageUrl" :alt="title || 'Repository introduction'" referrerpolicy="no-referrer" />
     </div>
     <div v-if="title || (lines && lines.length)" class="intro-text">
       <h3 v-if="title" class="intro-title">{{ title }}</h3>
@@ -37,6 +37,8 @@ defineProps<{
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
+    align-items: center;
+    text-align: center;
   }
 }
 

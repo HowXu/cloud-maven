@@ -43,9 +43,16 @@ const selectFile = (event: Event) => {
   targetName.value = file.value?.name ?? "";
 };
 
+const isUnsafePath = (p: string) => /\.\.|\\\\|\/\/|[\u0000-\u001F\u007F]/.test(p) || p.startsWith("api/") || p.startsWith("/api/");
+
 const upload = async () => {
   if (!file.value || !targetName.value.trim()) {
     createToast("Choose a file and target name", { type: "warning", position: "bottom-right" });
+    return;
+  }
+
+  if (isUnsafePath(targetPath.value)) {
+    createToast("Target path contains unsafe characters or patterns", { type: "warning", position: "bottom-right" });
     return;
   }
 
@@ -57,8 +64,12 @@ const upload = async () => {
     emit("uploaded");
     close();
     reset();
-  } catch {
-    createToast("Artifact could not be uploaded", { type: "danger", position: "bottom-right" });
+  } catch (err: any) {
+    if (err?.response?.status === 413) {
+      createToast("File too large for checksum mode", { type: "danger", position: "bottom-right" });
+    } else {
+      createToast("Artifact could not be uploaded", { type: "danger", position: "bottom-right" });
+    }
   } finally {
     uploading.value = false;
   }
