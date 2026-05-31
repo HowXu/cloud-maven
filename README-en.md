@@ -1,5 +1,3 @@
-# Cloud-Maven
-
 <p align="center">
     <h1 align="center">Cloud-Maven</h1>
     <p align="center">Lightweight Maven repository powered by Cloudflare Workers, one-click deploy 🎉</p>
