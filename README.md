@@ -83,13 +83,13 @@ cloud-maven
 在 `wrangler.toml`（或通过 Dashboard）中填入 KV namespace id。**不要将 `ADMIN_BOOTSTRAP_TOKEN` 写入配置文件**，它将通过 Secret 设置。
 
 ```toml
-[env.production.kv_namespaces]
+[[kv_namespaces]]
 binding = "MAVEN_KV"
-id = "here_is_your_id"
+#id = "输入后删除#或者直接使用Cloudflare控制台绑定"
 
-[env.production.r2_buckets]
+[[r2_buckets]]
 binding = "MAVEN_BUCKET"
-bucket_name = "here_is_your_bucket_name"
+#bucket_name = "输入后删除#或者直接使用Cloudflare控制台绑定"
 ```
 
 ### 4. 设置管理员 Secret

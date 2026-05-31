@@ -30,33 +30,10 @@ SESSION_TTL_SECONDS = "86400"
 DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
 
 # Set with: wrangler secret put ADMIN_BOOTSTRAP_TOKEN
-
-[env.production.vars]
-SESSION_TTL_SECONDS = "86400"
-DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
-
-[env.production]
-name = "cloud-maven-worker"
-
-[env.production.kv_namespaces]
+[[kv_namespaces]]
 binding = "MAVEN_KV"
-id = ""
+#id = "input your value and delete # or use cloudflare dashboard"
 
-[env.production.r2_buckets]
+[[r2_buckets]]
 binding = "MAVEN_BUCKET"
-bucket_name = ""
-
-[env.dev]
-name = "cloud-maven-worker-dev"
-
-[env.dev.kv_namespaces]
-binding = "MAVEN_KV"
-id = ""
-
-[env.dev.r2_buckets]
-binding = "MAVEN_BUCKET"
-bucket_name = ""
-
-[env.dev.vars]
-SESSION_TTL_SECONDS = "86400"
-DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
+#bucket_name = "input your value and delete # or use cloudflare dashboard"

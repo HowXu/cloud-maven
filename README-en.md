@@ -83,13 +83,13 @@ Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) and create:
 Fill in the KV namespace `id` in `wrangler.toml` (or via Dashboard). **Never commit `ADMIN_BOOTSTRAP_TOKEN` to the config file** — it must be set as a Secret.
 
 ```toml
-[env.production.kv_namespaces]
+[[kv_namespaces]]
 binding = "MAVEN_KV"
-id = "here_is_your_id"
+#id = "input your value and delete # or use cloudflare dashboard"
 
-[env.production.r2_buckets]
+[[r2_buckets]]
 binding = "MAVEN_BUCKET"
-bucket_name = "here_is_your_bucket_name"
+#bucket_name = "input your value and delete # or use cloudflare dashboard"
 ```
 
 ### 4. Set Admin Secret
