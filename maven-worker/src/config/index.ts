@@ -1,5 +1,5 @@
 import type { RepositoryPolicy, ClientSettings } from '../env'
-import { badRequest, internalError } from '../shared'
+import { badRequest } from '../shared'
 
 const KV_KEY_REPOSITORY = 'config:repository'
 const KV_KEY_SETTINGS = 'config:settings'
@@ -32,7 +32,9 @@ export async function getRepositoryPolicy(kv: KVNamespace | undefined): Promise<
   try {
     return JSON.parse(raw)
   } catch {
-    throw internalError('Failed to parse repository policy')
+    console.error('[config] Failed to parse repository policy, resetting to defaults')
+    await kv.put(KV_KEY_REPOSITORY, JSON.stringify(DEFAULT_POLICY))
+    return { ...DEFAULT_POLICY }
   }
 }
 
@@ -58,7 +60,9 @@ export async function getSettings(kv: KVNamespace | undefined): Promise<ClientSe
   try {
     return JSON.parse(raw)
   } catch {
-    throw internalError('Failed to parse settings')
+    console.error('[config] Failed to parse settings, resetting to defaults')
+    await kv.put(KV_KEY_SETTINGS, JSON.stringify(DEFAULT_SETTINGS))
+    return { ...DEFAULT_SETTINGS }
   }
 }
 

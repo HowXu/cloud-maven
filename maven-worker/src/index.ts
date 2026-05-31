@@ -58,7 +58,11 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
 
   if (!adminBootstrapChecked) {
     if (c.env.MAVEN_KV) {
-      await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+      try {
+        await ensureAdminToken(c.env.MAVEN_KV, c.env.ADMIN_BOOTSTRAP_TOKEN)
+      } catch (e) {
+        console.error('[bootstrap] ensureAdminToken failed:', e)
+      }
     }
     adminBootstrapChecked = true
   }
@@ -101,6 +105,8 @@ app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)
 
 app.onError((error, c) => {
+  console.error('[onError]', error)
+
   const kv = c.env.MAVEN_KV
   if (kv) {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')

@@ -28,5 +28,5 @@ export const jsonError = (c: Context<AppEnv>, error: AppError): Response => {
 }
 
 export const noContent = (c: Context<AppEnv>): Response => {
-  return c.body(null, 204)
+  return new Response(null, { status: 204 })
 }
