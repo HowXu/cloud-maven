@@ -13,10 +13,10 @@ export const siteConfig: SiteConfig = {
   introImageUrl: "https://q1.qlogo.cn/g?b=qq&nk=672252397&s=640",
   introTitle: "Cloud Maven",
   introLines: [
-    "基于 Cloudflare Workers的轻量 Maven 仓库",
-    "https://github.com/HowXu/cloud-maven"
+    "基于 Cloudflare Workers 的轻量 Maven 仓库",
+    "A Maven Repository Based on Cloudflare"
   ],
-  showGithubButton: false,
+  showGithubButton: true,
 };
 
 export function applySiteSettings(settings: { title?: string }) {
