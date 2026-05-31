@@ -70,7 +70,7 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
   await next()
 
   c.header('X-Request-Id', requestId)
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; img-src * data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'")
 
   if (isStaticAssetPath(c.req.path)) return
 
