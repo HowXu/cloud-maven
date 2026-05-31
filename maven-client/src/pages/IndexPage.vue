@@ -7,8 +7,9 @@ import FileBrowserView from "@/components/browser/FileBrowserView.vue";
 import DefaultHeader from "@/components/header/DefaultHeader.vue";
 import IntroCard from "@/components/common/IntroCard.vue";
 import { settingsApi } from "@/api/settings";
-import { introConfig } from "@/intro.config";
+import { siteConfig } from "@/site.config";
 import { useSession } from "@/composables/useSession";
+import { applySiteSettings } from "@/site.config";
 
 type TabName = "Directory" | "Admin" | "Settings";
 
@@ -38,12 +39,13 @@ watchEffect(() => {
   }
 });
 
-const introData = ref(introConfig);
+const siteData = siteConfig;
 
 onMounted(async () => {
   try {
     const response = await settingsApi.get();
     defaultRepo.value = response.data.defaultRepository || "";
+    applySiteSettings({ title: response.data.title });
   } catch {
     // ignore
   }
@@ -57,9 +59,9 @@ onMounted(async () => {
     <div class="content-container">
       <IntroCard
         v-if="selectedTab === 'Directory'"
-        :image-url="introData.imageUrl"
-        :title="introData.title"
-        :lines="introData.lines"
+        :image-url="siteData.introImageUrl"
+        :title="siteData.introTitle"
+        :lines="siteData.introLines"
       />
 
       <nav class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto" aria-label="Main sections">
