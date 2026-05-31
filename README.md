@@ -1,5 +1,3 @@
-# Cloud-Maven
-
 <p align="center">
     <h1 align="center">Cloud-Maven</h1>
     <p align="center">基于 Cloudflare Workers 的轻量 Maven 私有仓库，一键部署 🎉</p>
