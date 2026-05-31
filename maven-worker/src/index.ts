@@ -3,7 +3,7 @@ import type { Context, Next } from 'hono'
 import type { AppEnv } from './env'
 import { jsonData, jsonError, notFound, toAppError } from './shared'
 import { ensureAdminToken } from './tokens'
-import { getSettings } from './config'
+import { getRepositoryPolicy, getSettings } from './config'
 import { authApiRoutes } from './auth'
 import { adminRoutes } from './admin'
 import { mavenApiRoutes, handleFileGet, handleFileHead, handleFilePut, handleFileDelete } from './maven'
@@ -88,6 +88,22 @@ app.use('*', async (c: Context<AppEnv>, next: Next) => {
 
 app.get('/api/status/health', (c) => {
   return jsonData(c, { status: 'ok' })
+})
+
+app.get('/api/settings', async (c) => {
+  const policy = await getRepositoryPolicy(c.env.MAVEN_KV)
+  const settings = await getSettings(c.env.MAVEN_KV)
+  return jsonData(c, {
+    title: settings.title,
+    baseUrl: settings.baseUrl,
+    defaultRepository: settings.defaultRepository,
+    anonymousRead: policy.visibility === 'PUBLIC',
+    allowOverwrite: policy.allowOverwrite,
+    generateChecksums: settings.generateChecksums,
+    maintainMetadata: settings.maintainMetadata,
+    allowedCorsOrigins: settings.allowedCorsOrigins,
+    maxChecksumUploadSize: settings.maxChecksumUploadSize,
+  })
 })
 
 app.route('/api/auth', authApiRoutes)

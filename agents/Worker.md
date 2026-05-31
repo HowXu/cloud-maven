@@ -213,3 +213,21 @@ maven-worker/test/
 - `maven/index.ts:96-97` 改为按文件名判断：`name === 'maven-metadata.xml' || name.startsWith('maven-metadata.xml.')`，同时豁免 metadata XML 及其所有 checksum 变体（.sha1/.md5/.sha256/.sha512）
 备注：
 - 测试已先行添加到 `maven-worker/test/integration/maven-routes.test.ts`，包含「maven-metadata.xml 重上传」和「maven-metadata.xml.sha1 重上传」两条用例，后者当前预期会失败（409），修复后应通过
+
+### 2026-05-31 - 测试 -> 后端
+
+状态：已完成
+来源：agents/Test.md | maven-worker/src/admin/index.ts
+需求：
+- 🔴 `adminRoutes.get('/settings', ...)` 新路由（第11-18行）在 `adminRoutes` 变量声明（第59行）**之前**被调用，Node/Vitest 环境下会抛出 `ReferenceError: Cannot access 'adminRoutes' before initialization`。需将该路由移到 `adminRoutes` 声明之后。
+- 🟡 前端 `settingsApi.get()` 调用 `/api/settings`，但后端无此公开路由。`adminRoutes` 挂载在 `/api/admin` 下，新加的公开 `/settings` GET 如果不加 authManager 却挂在 adminRoutes 下，实际路径是 `/api/admin/settings`（非 `/api/settings`），且会与已有的认证版 `GET /settings`（第180行）冲突导致始终返回公开版数据。需要 confirm：应该新增独立的公开 `/api/settings` 路由，还是前端应改为调用 `/api/admin/settings`？
+验收：
+- `adminRoutes` 的所有 `.get()`/`.put()` 调用均在 `const adminRoutes = new Hono<AppEnv>()`（第59行）之后
+- 前端 `settingsApi.get()` 调用的端点在后端有对应的公开路由响应，或前端改回调用 `/api/admin/settings`（需同步更新 `agents/Client.md`）
+备注：
+- 前端测试已更新为分别测试 `settingsApi`（→`/api/settings`）和 `settingsAdminApi`（→`/api/admin/settings`）
+- 后端集成测试 `auth-admin-routes.test.ts` 中 `GET/PUT /api/admin/settings` 用例在 public handler 修复前可能受影响
+
+当前进展：
+- 🔴 `admin/index.ts:11-18` — 删除了重复的公开版 `GET /settings` 路由，该路由在 `adminRoutes` 声明前使用且无鉴权中间件。现已有认证版 `GET /settings`（第180行 $authManager$ 挂载）作为 `/api/admin/settings` 的唯一实现。
+- 🟡 `index.ts:93-106` — 新增公开 `GET /api/settings` 路由，无需鉴权，返回完整 ClientSettings（与 `/api/admin/settings` 相同字段），供前端 `settingsApi.get()` 调用。

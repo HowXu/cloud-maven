@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiClient } from "@/api/client";
-import { settingsApi } from "@/api/settings";
+import { settingsApi, settingsAdminApi } from "@/api/settings";
 import type { ClientSettings } from "@/types";
 
 vi.mock("@/api/client", () => ({
@@ -30,9 +30,9 @@ describe("settingsApi", () => {
   });
 
   describe("get", () => {
-    it("fetches settings via GET /api/admin/settings", () => {
+    it("fetches settings via GET /api/settings", () => {
       settingsApi.get();
-      expect(apiClient.get).toHaveBeenCalledWith("/api/admin/settings");
+      expect(apiClient.get).toHaveBeenCalledWith("/api/settings");
     });
 
     it("returns ClientSettings type", () => {
@@ -41,9 +41,27 @@ describe("settingsApi", () => {
     });
   });
 
+describe("settingsAdminApi", () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.get).mockReset();
+    vi.mocked(apiClient.put).mockReset();
+  });
+
+  describe("get", () => {
+    it("fetches admin settings via GET /api/admin/settings", () => {
+      settingsAdminApi.get();
+      expect(apiClient.get).toHaveBeenCalledWith("/api/admin/settings");
+    });
+
+    it("returns ClientSettings type", () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce({ data: defaultSettings });
+      expect(settingsAdminApi.get()).toBeDefined();
+    });
+  });
+
   describe("update", () => {
     it("updates settings via PUT /api/admin/settings", () => {
-      settingsApi.update(defaultSettings);
+      settingsAdminApi.update(defaultSettings);
       expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", defaultSettings);
     });
 
@@ -60,25 +78,25 @@ describe("settingsApi", () => {
         maxChecksumUploadSize: 0,
       };
 
-      settingsApi.update(settings);
+      settingsAdminApi.update(settings);
       expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", settings);
     });
 
     it("can update single field", () => {
       const partial: Partial<ClientSettings> = { title: "New Title" };
-      settingsApi.update({ ...defaultSettings, ...partial });
+      settingsAdminApi.update({ ...defaultSettings, ...partial });
       expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", expect.objectContaining({ title: "New Title" }));
     });
 
     it("sends empty strings for baseUrl when not set", () => {
       const settings: ClientSettings = { ...defaultSettings, baseUrl: "" };
-      settingsApi.update(settings);
+      settingsAdminApi.update(settings);
       expect(apiClient.put).toHaveBeenCalledWith("/api/admin/settings", settings);
     });
-
   });
+});
 
-  describe("ClientSettings type", () => {
+describe("ClientSettings type", () => {
     it("has correct structure with all fields", () => {
       expect(defaultSettings.title).toBe("Cloud Maven");
       expect(defaultSettings.anonymousRead).toBe(true);

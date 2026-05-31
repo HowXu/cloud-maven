@@ -7,6 +7,7 @@ import { badRequest, jsonData, noContent, normalizePermissionPath } from '../sha
 import { summarizeObjects } from '../storage'
 
 const authManager = auth({ permission: 'manage' })
+
 type PermissionAction = AccessPermission['actions'][number]
 const permissionActions = new Set<PermissionAction>(['read', 'write', 'delete', 'manage'])
 

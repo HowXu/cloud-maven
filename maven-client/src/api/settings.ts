@@ -3,6 +3,12 @@ import type { ClientSettings } from "@/types";
 
 export const settingsApi = {
   get() {
+    return apiClient.get<ClientSettings>("/api/settings");
+  },
+};
+
+export const settingsAdminApi = {
+  get() {
     return apiClient.get<ClientSettings>("/api/admin/settings");
   },
   update(settings: ClientSettings) {

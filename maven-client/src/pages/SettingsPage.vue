@@ -3,7 +3,7 @@ import { Save } from "lucide-vue-next";
 import { onMounted, reactive, ref, watch } from "vue";
 import { createToast } from "mosha-vue-toastify";
 
-import { settingsApi } from "@/api/settings";
+import { settingsAdminApi } from "@/api/settings";
 import { useSession } from "@/composables/useSession";
 import type { ClientSettings } from "@/types";
 
@@ -33,7 +33,7 @@ const loadSettings = async () => {
   error.value = null;
 
   try {
-    const response = await settingsApi.get();
+    const response = await settingsAdminApi.get();
     Object.assign(form, response.data);
   } catch {
     error.value = "Settings API is not available yet.";
@@ -46,7 +46,7 @@ const saveSettings = async () => {
   saving.value = true;
 
   try {
-    const response = await settingsApi.update({ ...form });
+    const response = await settingsAdminApi.update({ ...form });
     Object.assign(form, response.data);
     createToast("Settings saved", { type: "success", position: "bottom-right" });
   } catch {
