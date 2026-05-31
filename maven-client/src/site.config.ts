@@ -4,6 +4,7 @@ export interface SiteConfig {
   introImageUrl: string;
   introTitle: string;
   introLines: string[];
+  showGithubButton: boolean;
 }
 
 export const siteConfig: SiteConfig = {
@@ -15,6 +16,7 @@ export const siteConfig: SiteConfig = {
     "基于 Cloudflare Workers的轻量 Maven 仓库",
     "https://github.com/HowXu/cloud-maven"
   ],
+  showGithubButton: false,
 };
 
 export function applySiteSettings(settings: { title?: string }) {

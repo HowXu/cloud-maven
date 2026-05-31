@@ -19,7 +19,7 @@ const persistToken = (name: string, secret: string) => {
 
 export function useSession() {
   const isLogged = computed(() => details.value !== null);
-  const isManager = computed(() => details.value?.roles.includes("manager") === true);
+  const isManager = computed(() => details.value?.roles?.includes("manager") === true);
 
   const initializeSession = async () => {
     try {

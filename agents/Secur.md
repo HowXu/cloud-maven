@@ -1,5 +1,7 @@
 # 安全审计 Agent 工作手册
 
+> **状态**：初步开发已完成，所有审计发现均已修复并归档。
+
 ## 角色定位
 
 你是 Cloud-Maven 的安全审计 Agent，负责审查代码安全性，包括鉴权体系、路径安全、密钥管理、权限模型、输入校验和依赖风险。**只审计不修改业务代码**。
@@ -69,80 +71,37 @@
 
 ## 本次审计新发现
 
+> 所有发现均已修复并归档
+
 ### 🔴 高危
 
 #### 1. CORS 默认全放行 + 携带凭证（CSRF 风险）
-- **位置**: `maven-worker/src/index.ts:42-53`
-- **问题**: 当 `allowedCorsOrigins` 为空数组（默认值）时，所有 origin 的 CORS 请求均被放行，且同时设置 `Access-Control-Allow-Credentials: true`
-- **代码**:
-  ```ts
-  if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-    c.header('Access-Control-Allow-Origin', origin)
-    c.header('Access-Control-Allow-Credentials', 'true')
-  }
-  ```
-- **影响**: 任意第三方网站可向 Worker 发起带凭证的跨域请求。Cookie Session (`SameSite=Lax`) 对 top-level GET 导航仍会携带 cookie。若用户被诱导访问恶意页面，可能触发非预期的 API 操作
-- **建议**: 
-  - 默认拒绝所有 CORS（`allowedOrigins.length === 0` 时不设置 `Access-Control-Allow-Origin`）
-  - 或至少默认仅允许同源，管理员需显式添加允许的 origin
-  - 考虑将 `Access-Control-Allow-Credentials` 设为 `false`
+- **状态**: ✅ 已修复 — `index.ts` 仅在 `allowedOrigins.includes(origin)` 时放行 credentialed CORS
 
 ### 🟡 中危
 
 #### 2. Token 名称创建时无校验
-- **位置**: `maven-worker/src/admin/index.ts:87-91`
-- **问题**: `POST /api/admin/tokens` 接受任意字符串作为 token name，未校验：
-  - 空字符串（`""` → KV key 变成 `token-name:`，污染索引）
-  - 包含 `/` 或 `\u0000` 等特殊字符（KV key 异常）
-- **影响**: 恶意或误操作可创建畸形 token，污染 KV 命名空间
-- **建议**: 添加 name 校验：非空、仅允许 `[A-Za-z0-9_.-]+`、长度限制（如 1-128）
+- **状态**: ✅ 已修复 — `admin/index.ts` 和 `tokens/index.ts` 均添加 `[A-Za-z0-9_.-]+` + 长度 1-128 校验
 
 #### 3. 登录接口无频率限制
-- **位置**: `maven-worker/src/auth/index.ts:168-199`
-- **问题**: `/api/auth/login` 无限速、无账户锁定、无失败计数
-- **影响**: 攻击者可对已知 token name 进行暴力破解。虽 PBKDF2-SHA256 100k 迭代有一定抗性，但无 IP/账户级限速仍是风险敞口
-- **建议**: 实现基于 KV 的失败计数 + 递增延迟（如连续 5 次失败后锁定 15 分钟）
+- **状态**: ✅ 已修复 — 5 次失败后锁定 15 分钟（429），成功后重置计数器
 
 #### 4. Dev 模式鉴权后门
-- **位置**: `maven-worker/src/auth/index.ts:172-179`
-- **问题**: 当 `MAVEN_KV` 未绑定时，直接用明文 `ADMIN_BOOTSTRAP_TOKEN` 比对即授予完整 manager 权限
-  ```ts
-  if (!c.env.MAVEN_KV) {
-    if (body.name === 'admin' && body.secret === c.env.ADMIN_BOOTSTRAP_TOKEN) {
-      return jsonData(c, { ...permissions: [{ path: '/', actions: ['read', 'write', 'delete', 'manage'] }] })
-    }
-  }
-  ```
-- **影响**: 若生产环境误部署未绑定 KV，`ADMIN_BOOTSTRAP_TOKEN` 即为万能后门
-- **建议**: 
-  - Dev 模式应仅在 `wrangler dev` 本地环境启用，可通过检查 `c.env` 中的特定标志区分
-  - 或在生产部署检查清单中明确强调必须绑定 KV
+- **状态**: ✅ 已修复 — 已移除 `MAVEN_KV` 未绑定时的明文 bootstrap fallback
 
 ### 🟢 低危
 
 #### 5. 缺少 Content-Security-Policy 头
-- **位置**: `maven-worker/src/index.ts:37-82`（全局中间件）
-- **问题**: Worker 响应未设置 `Content-Security-Policy` 头
-- **影响**: 若前端存在 XSS 漏洞，缺少 CSP 将增加利用成功率
-- **建议**: 添加 CSP 头（如 `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'`）
+- **状态**: ✅ 已修复 — 所有响应添加 `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:`
 
 #### 6. allowedCorsOrigins 未校验 URL 格式
-- **位置**: `maven-worker/src/config/index.ts:100-104`
-- **问题**: 仅检查 `typeof o === 'string'`，未校验是否为合法 origin（如 `http://example.com`）
-- **影响**: 管理员可误配置无效字符串，导致 CORS 全部拒绝（静默失效）或匹配异常
-- **建议**: 添加 origin 格式校验（regex: `/^https?:\/\/[^\/]+$/` 或类似）
+- **状态**: ✅ 已修复 — 新增 `originPattern = /^https?:\/\/[^\/]+$/` 校验
 
 #### 7. Settings 文本字段无长度限制
-- **位置**: `maven-worker/src/config/index.ts:72-82`
-- **问题**: `title`、`baseUrl`、`defaultRepository` 未限制长度
-- **影响**: 可设置超长字符串（如 1MB），占用 KV 存储空间（CF KV 单 value 上限 25MB）
-- **建议**: 限制各字段最大长度（如 title 100 字符、baseUrl 500 字符）
+- **状态**: ✅ 已修复 — title ≤100, baseUrl ≤500, defaultRepository ≤100
 
 #### 8. 前端 xBasic 凭证驻留内存
-- **位置**: `maven-client/src/composables/useSession.ts:14-18`
-- **问题**: `persistToken` 将 name 和 secret 明文保存在模块级 `ref` 中
-- **影响**: 凭证在页面生命周期内驻留内存，可被浏览器扩展或 DevTools 读取；页面刷新后凭证丢失，需依赖 cookie session
-- **状态**: 可接受的设计权衡（Reposilite xBasic 兼容需要），但需注意内存中凭证的生命周期
+- **状态**: ℹ️ 可接受 — 审计标记为可接受的设计权衡（Reposilite xBasic 兼容需要）
 
 ---
 
@@ -155,13 +114,13 @@
 - [x] 路径校验是否阻止所有目录遍历向量 — 通过：`..`、`.`、`\`、`//`、控制字符、API 前缀均被拦截
 - [x] Manager 权限是否正确保护所有 Admin API — 通过：所有 `/api/admin/*` 路由使用 `auth({ permission: 'manage' })`
 - [x] 匿名读取是否尊重仓库可见性设置 — 通过：PRIVATE/HIDDEN 时拒绝匿名读取
-- [x] Token 创建/更新是否校验输入合法性 — **不通过**：name 字段无校验（见 #2）
+- [x] Token 创建/更新是否校验输入合法性 — 通过：name 字段有 regex + 长度校验
 - [x] Bootstrap token 是否在使用后妥善处理 — 通过：仅首次无 token 时使用，建议创建后轮换
-- [x] 前端是否有 XSS 防护（输入转义、CSP 等） — **不通过**：缺少 CSP 头（见 #5）
+- [x] 前端是否有 XSS 防护（输入转义、CSP 等）— 通过：所有响应添加 CSP 头，`v-html` 场景均有 HTML 转义
 - [x] 依赖是否存在已知 CVE — 通过：生产依赖仅有 hono ^4.7.0，无已知 CVE
-- [x] CORS 配置是否安全 — **不通过**：默认全放行 + 带凭证（见 #1）
-- [x] 登录接口是否存在暴力破解防护 — **不通过**：无速率限制（见 #3）
-- [x] Dev 模式是否存在鉴权绕过风险 — **不通过**：KV 未绑定时的 fallback 逻辑（见 #4）
+- [x] CORS 配置是否安全 — 通过：默认不放行 credentialed CORS，可配置 allowedOrigins
+- [x] 登录接口是否存在暴力破解防护 — 通过：5 次失败后锁定 15 分钟
+- [x] Dev 模式是否存在鉴权绕过风险 — 通过：已移除明文 bootstrap fallback
 
 ## 审计工作流程
 
@@ -172,17 +131,22 @@
 
 ## 安全检查清单
 
-- [ ] xBasic 解析是否正确处理畸形 header
-- [ ] PBKDF2 参数是否满足最低安全要求（≥100,000 迭代）
-- [ ] Session 是否设置合理的 TTL
-- [ ] Cookie 是否设置 HttpOnly、SameSite、Secure 属性
-- [ ] 路径校验是否阻止所有目录遍历向量
-- [ ] Manager 权限是否正确保护所有 Admin API
-- [ ] 匿名读取是否尊重仓库可见性设置
-- [ ] Token 创建/更新是否校验输入合法性
-- [ ] Bootstrap token 是否在使用后妥善处理
-- [ ] 前端是否有 XSS 防护（输入转义、CSP 等）
-- [ ] 依赖是否存在已知 CVE
+> 所有项目已通过（初步开发阶段完成）
+
+- [x] xBasic 解析是否正确处理畸形 header — 通过
+- [x] PBKDF2 参数是否满足最低安全要求（≥100,000 迭代）— 通过
+- [x] Session 是否设置合理的 TTL — 通过：默认 86400s (24h)
+- [x] Cookie 是否设置 HttpOnly、SameSite、Secure 属性 — 通过
+- [x] 路径校验是否阻止所有目录遍历向量 — 通过：`..`、`.`、`\`、`//`、控制字符、API 前缀均被拦截
+- [x] Manager 权限是否正确保护所有 Admin API — 通过：所有 `/api/admin/*` 路由使用 `auth({ permission: 'manage' })`
+- [x] 匿名读取是否尊重仓库可见性设置 — 通过：PRIVATE/HIDDEN 时拒绝匿名读取
+- [x] Token 创建/更新是否校验输入合法性 — 通过：name 字段有 regex + 长度校验
+- [x] Bootstrap token 是否在使用后妥善处理 — 通过：仅首次无 token 时使用，建议创建后轮换
+- [x] 前端是否有 XSS 防护（输入转义、CSP 等）— 通过：所有响应添加 CSP 头，`v-html` 场景均有 HTML 转义
+- [x] 依赖是否存在已知 CVE — 通过：生产依赖无已知 CVE
+- [x] CORS 配置是否安全 — 通过：默认不放行 credentialed CORS，可配置 allowedOrigins
+- [x] 登录接口是否存在暴力破解防护 — 通过：5 次失败后锁定 15 分钟
+- [x] Dev 模式是否存在鉴权绕过风险 — 通过：已移除明文 bootstrap fallback
 
 ## 注意事项
 

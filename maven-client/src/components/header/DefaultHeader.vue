@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { AlignJustify, LogOut, Moon, Sun, X } from "lucide-vue-next";
+import { AlignJustify, Github, LogOut, Moon, Sun, X } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 
 import LoginModal from "@/components/header/LoginModal.vue";
 import { settingsApi } from "@/api/settings";
+import { siteConfig } from "@/site.config";
 import { useSession } from "@/composables/useSession";
 import { useTheme } from "@/composables/useTheme";
 
@@ -55,6 +56,10 @@ onMounted(async () => {
         </button>
 
         <div class="hidden items-center gap-2 sm:flex">
+          <a v-if="siteConfig.showGithubButton" class="icon-button" type="button" title="GitHub" :href="'https://github.com/HowXu/cloud-maven'" target="_blank" rel="noopener noreferrer">
+            <Github class="h-4 w-4" />
+          </a>
+
           <button class="icon-button" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleTheme">
             <Sun v-if="isDark" class="h-4 w-4" />
             <Moon v-else class="h-4 w-4" />
@@ -63,7 +68,7 @@ onMounted(async () => {
           <LoginModal v-if="!isLogged" />
           <button v-else class="soft-button" type="button" @click="logout">
             <LogOut class="h-4 w-4" />
-            {{ details?.token.name }}
+            {{ details?.token?.name }}
           </button>
         </div>
       </div>
@@ -71,6 +76,11 @@ onMounted(async () => {
 
     <div v-if="menuOpen" class="border-t border-gray-200 dark:border-gray-800 sm:hidden">
       <div class="content-container flex flex-col gap-2 py-3">
+        <a v-if="siteConfig.showGithubButton" class="soft-button mobile-menu-action" type="button" title="GitHub" :href="'https://github.com/HowXu/cloud-maven'" target="_blank" rel="noopener noreferrer">
+          <Github class="h-4 w-4 shrink-0" />
+          <span>GitHub</span>
+        </a>
+
         <button class="soft-button mobile-menu-action" type="button" :title="isDark ? 'Use light theme' : 'Use dark theme'" @click="toggleThemeFromMenu">
           <Sun v-if="isDark" class="h-4 w-4 shrink-0" />
           <Moon v-else class="h-4 w-4 shrink-0" />
@@ -80,7 +90,7 @@ onMounted(async () => {
         <LoginModal v-if="!isLogged" class="mobile-menu-login" @click="menuOpen = false" />
         <button v-else class="soft-button mobile-menu-action" type="button" @click="logoutFromMenu">
           <LogOut class="h-4 w-4 shrink-0" />
-          {{ details?.token.name }}
+          {{ details?.token?.name }}
         </button>
       </div>
     </div>
