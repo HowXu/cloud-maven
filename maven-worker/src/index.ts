@@ -105,8 +105,6 @@ app.post('/*', handleFilePut)
 app.delete('/*', handleFileDelete)
 
 app.onError((error, c) => {
-  console.error('[onError]', error)
-
   const kv = c.env.MAVEN_KV
   if (kv) {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')

@@ -30,7 +30,7 @@ export async function getRepositoryPolicy(kv: KVNamespace | undefined): Promise<
     return policy
   }
   try {
-    return JSON.parse(raw)
+    return { ...DEFAULT_POLICY, ...JSON.parse(raw) }
   } catch {
     console.error('[config] Failed to parse repository policy, resetting to defaults')
     await kv.put(KV_KEY_REPOSITORY, JSON.stringify(DEFAULT_POLICY))
@@ -58,7 +58,7 @@ export async function getSettings(kv: KVNamespace | undefined): Promise<ClientSe
     return { ...DEFAULT_SETTINGS }
   }
   try {
-    return JSON.parse(raw)
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }
   } catch {
     console.error('[config] Failed to parse settings, resetting to defaults')
     await kv.put(KV_KEY_SETTINGS, JSON.stringify(DEFAULT_SETTINGS))
