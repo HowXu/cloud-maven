@@ -56,7 +56,7 @@ cloud-maven
     │   ├── composables/   # useSession, useRepository, useMavenMetadata
     │   ├── pages/         # IndexPage, AdminPage, SettingsPage
     │   └── components/    # Header, FileBrowser, TokenEditor, DeleteModal
-    └── dist/             # Frontend build output (deployed to Worker)
+    └── dist/              # Frontend build output (deployed to Worker)
 ```
 
 ## Deployment Guide
