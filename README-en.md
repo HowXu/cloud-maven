@@ -80,6 +80,8 @@ Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) and create:
 
 Fill in the KV namespace `id` in `wrangler.toml` (or via Dashboard). **Never commit `ADMIN_BOOTSTRAP_TOKEN` to the config file** — it must be set as a Secret.
 
+If there are no specific kv and r2 buckets specified, this configuration option can be ignored and Cloudflare will automatically create the kv and R2 buckets.
+
 ```toml
 [[kv_namespaces]]
 binding = "MAVEN_KV"
