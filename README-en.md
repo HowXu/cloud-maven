@@ -74,7 +74,9 @@ Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) and create:
 
 1. Fork this repo to your GitHub account
 2. Cloudflare Dashboard → **Workers & Pages** → **Create Worker** → **Import from Git**
-3. Connect your fork, set directory to `maven-worker`, branch to `main`
+3. Connect your fork, then in Cloudflare deployment settings, set the directory to `maven-worker`:
+
+![Advanced settings](./screenshots/sc5.png)
 
 ### 3. Configure Bindings
 

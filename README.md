@@ -74,7 +74,9 @@ cloud-maven
 
 1. Fork 本仓库到你的 GitHub 账号
 2. 进入 Cloudflare Dashboard → **Workers & Pages** → **创建 Worker** → **从 Git 导入**
-3. 连接你的 fork，目录选择 `maven-worker`，分支选择 `main`
+3. 连接你的 fork 仓库，调整 Cloudflare 部署设置中的高级设置，将目录设置为`maven-worker`:
+
+![高级设置](./screenshots/sc5.png)
 
 ### 3. 配置绑定
 

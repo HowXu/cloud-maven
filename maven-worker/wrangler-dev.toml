@@ -14,14 +14,14 @@ run_worker_first = true
 SESSION_TTL_SECONDS = "86400"
 DEFAULT_REPOSITORY_POLICY = '{"visibility":"PUBLIC","allowOverwrite":false}'
 
-[env.dev]
+[env]
 name = "cloud-maven-worker-dev"
 
 # Main Config
-[env.dev.kv_namespaces]
+[env.kv_namespaces]
 binding = "MAVEN_KV"
 id = "8cf84f007ca34706a5178d3801c159fb"
 
-[env.dev.r2_buckets]
+[env.r2_buckets]
 binding = "MAVEN_BUCKET"
 bucket_name = "cloud-maven-dev"
